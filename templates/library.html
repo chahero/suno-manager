@@ -105,9 +105,9 @@
         songsList.innerHTML = '';
 
         try {
-            const response = await fetch('/api/songs');
+            const response = await fetch('/api/songs?page=0');
             const data = await response.json();
-            songs = data.songs || [];
+            songs = data.clips || [];  // SUNO API는 'clips' 배열 사용
 
             loadingState.classList.add('hidden');
 
@@ -132,7 +132,7 @@
         // 필터링
         let filteredSongs = songs.filter(song => {
             const title = (song.title || '').toLowerCase();
-            const prompt = (song.prompt || '').toLowerCase();
+            const prompt = (song.metadata?.prompt || '').toLowerCase();
             return title.includes(searchTerm) || prompt.includes(searchTerm);
         });
 
@@ -157,48 +157,66 @@
             return;
         }
 
-        songsList.innerHTML = filteredSongs.map(song => `
+        songsList.innerHTML = filteredSongs.map(song => {
+            const duration = song.metadata?.duration ? Math.round(song.metadata.duration) : 0;
+            const createdDate = song.created_at ? new Date(song.created_at).toLocaleString('ko-KR', {
+                year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+            }) : 'Unknown';
+            const displayTags = song.display_tags || song.metadata?.tags || '';
+            const imageUrl = song.image_url || '';
+
+            return `
             <div class="bg-dark-card rounded-xl border border-gray-700 p-6 hover:border-purple-500 transition-all">
                 <div class="flex items-start justify-between">
                     <div class="flex items-start space-x-4 flex-1">
                         <!-- 앨범 커버 -->
-                        <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                            </svg>
-                        </div>
+                        ${imageUrl ?
+                            `<img src="${imageUrl}" alt="${song.title}" class="w-20 h-20 rounded-lg object-cover flex-shrink-0" />` :
+                            `<div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                                </svg>
+                            </div>`
+                        }
 
                         <!-- 음악 정보 -->
                         <div class="flex-1 min-w-0">
                             <h3 class="text-lg font-bold text-white mb-1">${song.title || 'Untitled'}</h3>
-                            <p class="text-sm text-gray-400 mb-2">${song.prompt || 'No description'}</p>
-                            <div class="flex items-center space-x-4 text-sm text-gray-500">
+                            <p class="text-sm text-gray-400 mb-2 line-clamp-2">${(song.metadata?.prompt || 'No description').substring(0, 150)}...</p>
+                            <div class="flex items-center flex-wrap gap-2 text-sm text-gray-500">
                                 <span class="flex items-center">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
-                                    ${song.duration || 30}초
+                                    ${duration}초
                                 </span>
                                 <span class="flex items-center">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                     </svg>
-                                    ${song.created_at || 'Just now'}
+                                    ${createdDate}
                                 </span>
-                                ${song.genre ? `<span class="px-2 py-1 bg-purple-600 bg-opacity-20 text-purple-400 rounded">${song.genre}</span>` : ''}
+                                <span class="flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    ${song.play_count || 0} 재생
+                                </span>
+                                ${displayTags ? `<span class="px-2 py-1 bg-purple-600 bg-opacity-20 text-purple-400 rounded text-xs">${displayTags}</span>` : ''}
                             </div>
                         </div>
                     </div>
 
                     <!-- 액션 버튼 -->
                     <div class="flex items-center space-x-2 ml-4">
-                        <button onclick="playSong('${song.id}')" class="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors" title="재생">
+                        <button onclick="playSong('${song.id}', '${song.audio_url || ''}')" class="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors" title="재생">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </button>
-                        <button onclick="downloadSong('${song.id}')" class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors" title="다운로드">
+                        <button onclick="downloadSong('${song.id}', '${song.title || 'song'}')" class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors" title="다운로드">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                             </svg>
@@ -211,21 +229,23 @@
                     </div>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     }
 
     // 음악 재생
-    function playSong(songId) {
-        console.log('재생:', songId);
-        // TODO: 실제 재생 구현
-        alert('음악 재생 기능은 API 연동 후 사용할 수 있습니다.');
+    function playSong(songId, audioUrl) {
+        if (!audioUrl) {
+            alert('오디오 URL을 찾을 수 없습니다.');
+            return;
+        }
+
+        // 새 탭에서 재생 또는 오디오 플레이어 열기
+        window.open(audioUrl, '_blank');
     }
 
     // 음악 다운로드
-    function downloadSong(songId) {
-        console.log('다운로드:', songId);
-        // TODO: 실제 다운로드 구현
-        alert('다운로드 기능은 API 연동 후 사용할 수 있습니다.');
+    function downloadSong(songId, title) {
+        window.location.href = `/api/songs/${songId}/download`;
     }
 
     // 삭제 모달 표시

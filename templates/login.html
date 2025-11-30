@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 - SUNO Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            hover: '#334155',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-dark-bg text-gray-100 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full mx-4">
+        <!-- 로고 -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent mb-2">
+                SUNO Manager
+            </h1>
+            <p class="text-gray-400">AI Music Generator</p>
+        </div>
+
+        <!-- 로그인 카드 -->
+        <div class="bg-dark-card rounded-xl border border-gray-700 p-8">
+            <h2 class="text-2xl font-bold text-white mb-6">로그인</h2>
+
+            {% if error %}
+            <div class="mb-4 p-4 bg-red-600 bg-opacity-20 border border-red-500 rounded-lg text-red-400">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form id="login-form" method="POST" action="{{ url_for('login') }}" class="space-y-6">
+                <div>
+                    <label for="token" class="block text-sm font-medium text-gray-300 mb-2">
+                        SUNO 세션 토큰
+                    </label>
+                    <input
+                        type="password"
+                        id="token"
+                        name="token"
+                        required
+                        class="w-full px-4 py-3 bg-dark-bg border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all"
+                        placeholder="세션 토큰을 입력하세요"
+                    />
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-dark-bg"
+                >
+                    로그인
+                </button>
+            </form>
+
+            <!-- 토큰 가져오기 가이드 -->
+            <div class="mt-8 pt-8 border-t border-gray-700">
+                <h3 class="text-sm font-semibold text-gray-300 mb-4">토큰 가져오기</h3>
+                <ol class="text-sm text-gray-400 space-y-2 list-decimal list-inside">
+                    <li>SUNO 웹사이트(<a href="https://suno.com" target="_blank" class="text-purple-400 hover:text-purple-300">suno.com</a>)에 로그인</li>
+                    <li>브라우저 개발자 도구 열기 (F12)</li>
+                    <li>Application/Storage → Cookies 탭</li>
+                    <li><code class="px-2 py-1 bg-dark-bg rounded text-purple-400">token</code> 쿠키 값 복사</li>
+                    <li>위 입력란에 붙여넣기</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- 푸터 -->
+        <div class="text-center mt-8 text-gray-500 text-sm">
+            <p>이 토큰은 서버에 저장되며, 로그아웃 시 삭제됩니다</p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('login-form');
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const token = document.getElementById('token').value;
+            const button = form.querySelector('button[type="submit"]');
+
+            button.disabled = true;
+            button.textContent = '인증 중...';
+
+            try {
+                const response = await fetch('{{ url_for("login") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ token })
+                });
+
+                if (response.ok) {
+                    window.location.href = '{{ url_for("index") }}';
+                } else {
+                    const data = await response.json();
+                    alert(data.error || '로그인 실패');
+                    button.disabled = false;
+                    button.textContent = '로그인';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('로그인 중 오류가 발생했습니다');
+                button.disabled = false;
+                button.textContent = '로그인';
+            }
+        });
+    </script>
+</body>
+</html>
