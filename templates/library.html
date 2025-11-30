@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}음악 라이브러리 - SUNO Manager{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- 헤더 -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-3xl font-bold text-white">음악 라이브러리</h2>
+            <p class="text-gray-400 mt-2">생성된 모든 음악을 관리하세요</p>
+        </div>
+        <button onclick="loadSongs()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            새로고침
+        </button>
+    </div>
+
+    <!-- 검색 및 필터 -->
+    <div class="bg-dark-card rounded-xl border border-gray-700 p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-2">
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="search-input"
+                        placeholder="음악 제목, 프롬프트 검색..."
+                        class="w-full pl-12 pr-4 py-3 bg-dark-bg border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                    />
+                    <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <select id="sort-select" class="w-full px-4 py-3 bg-dark-bg border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500">
+                    <option value="date-desc">최신순</option>
+                    <option value="date-asc">오래된순</option>
+                    <option value="title-asc">제목 오름차순</option>
+                    <option value="title-desc">제목 내림차순</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- 음악 목록 -->
+    <div id="songs-container" class="grid grid-cols-1 gap-4">
+        <!-- 로딩 상태 -->
+        <div id="loading-state" class="bg-dark-card rounded-xl border border-gray-700 p-12 text-center">
+            <svg class="w-12 h-12 mx-auto mb-4 text-purple-500 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            <p class="text-gray-400">음악 목록을 불러오는 중...</p>
+        </div>
+
+        <!-- 빈 상태 -->
+        <div id="empty-state" class="hidden bg-dark-card rounded-xl border border-gray-700 p-12 text-center">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+            </svg>
+            <h3 class="text-xl font-bold text-white mb-2">아직 생성된 음악이 없습니다</h3>
+            <p class="text-gray-400 mb-4">첫 번째 음악을 만들어보세요!</p>
+            <a href="{{ url_for('generate') }}" class="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
+                음악 생성하기
+            </a>
+        </div>
+
+        <!-- 음악 카드가 여기에 동적으로 추가됩니다 -->
+        <div id="songs-list"></div>
+    </div>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div id="delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-dark-card rounded-xl border border-gray-700 p-8 max-w-md w-full mx-4">
+        <h3 class="text-xl font-bold text-white mb-4">음악 삭제</h3>
+        <p class="text-gray-400 mb-6">정말로 이 음악을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
+        <div class="flex items-center space-x-4">
+            <button onclick="closeDeleteModal()" class="flex-1 px-4 py-3 bg-dark-bg hover:bg-dark-hover text-white rounded-lg transition-colors">
+                취소
+            </button>
+            <button onclick="confirmDelete()" class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                삭제
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let songs = [];
+    let songToDelete = null;
+
+    // 음악 목록 로드
+    async function loadSongs() {
+        const loadingState = document.getElementById('loading-state');
+        const emptyState = document.getElementById('empty-state');
+        const songsList = document.getElementById('songs-list');
+
+        loadingState.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        songsList.innerHTML = '';
+
+        try {
+            const response = await fetch('/api/songs');
+            const data = await response.json();
+            songs = data.songs || [];
+
+            loadingState.classList.add('hidden');
+
+            if (songs.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                renderSongs();
+            }
+        } catch (error) {
+            console.error('음악 목록 로드 실패:', error);
+            loadingState.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+        }
+    }
+
+    // 음악 카드 렌더링
+    function renderSongs() {
+        const songsList = document.getElementById('songs-list');
+        const searchTerm = document.getElementById('search-input').value.toLowerCase();
+        const sortBy = document.getElementById('sort-select').value;
+
+        // 필터링
+        let filteredSongs = songs.filter(song => {
+            const title = (song.title || '').toLowerCase();
+            const prompt = (song.prompt || '').toLowerCase();
+            return title.includes(searchTerm) || prompt.includes(searchTerm);
+        });
+
+        // 정렬
+        filteredSongs.sort((a, b) => {
+            switch(sortBy) {
+                case 'date-desc':
+                    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                case 'date-asc':
+                    return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+                case 'title-asc':
+                    return (a.title || '').localeCompare(b.title || '');
+                case 'title-desc':
+                    return (b.title || '').localeCompare(a.title || '');
+                default:
+                    return 0;
+            }
+        });
+
+        if (filteredSongs.length === 0) {
+            songsList.innerHTML = '<div class="bg-dark-card rounded-xl border border-gray-700 p-12 text-center"><p class="text-gray-400">검색 결과가 없습니다</p></div>';
+            return;
+        }
+
+        songsList.innerHTML = filteredSongs.map(song => `
+            <div class="bg-dark-card rounded-xl border border-gray-700 p-6 hover:border-purple-500 transition-all">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start space-x-4 flex-1">
+                        <!-- 앨범 커버 -->
+                        <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                            </svg>
+                        </div>
+
+                        <!-- 음악 정보 -->
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-bold text-white mb-1">${song.title || 'Untitled'}</h3>
+                            <p class="text-sm text-gray-400 mb-2">${song.prompt || 'No description'}</p>
+                            <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                <span class="flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    ${song.duration || 30}초
+                                </span>
+                                <span class="flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    ${song.created_at || 'Just now'}
+                                </span>
+                                ${song.genre ? `<span class="px-2 py-1 bg-purple-600 bg-opacity-20 text-purple-400 rounded">${song.genre}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 액션 버튼 -->
+                    <div class="flex items-center space-x-2 ml-4">
+                        <button onclick="playSong('${song.id}')" class="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors" title="재생">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </button>
+                        <button onclick="downloadSong('${song.id}')" class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors" title="다운로드">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                        </button>
+                        <button onclick="showDeleteModal('${song.id}')" class="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors" title="삭제">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 음악 재생
+    function playSong(songId) {
+        console.log('재생:', songId);
+        // TODO: 실제 재생 구현
+        alert('음악 재생 기능은 API 연동 후 사용할 수 있습니다.');
+    }
+
+    // 음악 다운로드
+    function downloadSong(songId) {
+        console.log('다운로드:', songId);
+        // TODO: 실제 다운로드 구현
+        alert('다운로드 기능은 API 연동 후 사용할 수 있습니다.');
+    }
+
+    // 삭제 모달 표시
+    function showDeleteModal(songId) {
+        songToDelete = songId;
+        document.getElementById('delete-modal').classList.remove('hidden');
+    }
+
+    // 삭제 모달 닫기
+    function closeDeleteModal() {
+        songToDelete = null;
+        document.getElementById('delete-modal').classList.add('hidden');
+    }
+
+    // 삭제 확인
+    async function confirmDelete() {
+        if (!songToDelete) return;
+
+        try {
+            const response = await fetch(`/api/songs/${songToDelete}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                closeDeleteModal();
+                loadSongs();
+            } else {
+                alert('삭제에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('삭제 실패:', error);
+            alert('삭제에 실패했습니다.');
+        }
+    }
+
+    // 검색 및 정렬 이벤트 리스너
+    document.getElementById('search-input').addEventListener('input', renderSongs);
+    document.getElementById('sort-select').addEventListener('change', renderSongs);
+
+    // 페이지 로드 시 음악 목록 로드
+    loadSongs();
+</script>
+{% endblock %}
