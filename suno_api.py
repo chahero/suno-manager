@@ -1,26 +1,30 @@
 import requests
 import os
+import uuid
 from typing import Optional, List, Dict
 
 class SunoAPI:
-    def __init__(self, session_token: Optional[str] = None):
+    def __init__(self, bearer_token: Optional[str] = None):
         """
         SUNO API 클라이언트
 
         Args:
-            session_token: SUNO 세션 토큰 (브라우저에서 로그인 후 복사)
+            bearer_token: SUNO Bearer 토큰 (JWT)
         """
-        self.session_token = session_token or os.getenv('SUNO_SESSION_TOKEN')
+        self.bearer_token = bearer_token or os.getenv('SUNO_BEARER_TOKEN')
         self.base_url = 'https://studio-api.prod.suno.com/api'
 
-        # 쿠키 방식으로 인증
-        self.session = requests.Session()
-        if self.session_token:
-            self.session.cookies.set('token', self.session_token)
+        # 디바이스 ID 생성 또는 환경 변수에서 가져오기
+        self.device_id = os.getenv('SUNO_DEVICE_ID', str(uuid.uuid4()))
 
+        self.session = requests.Session()
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Content-Type': 'application/json',
+            'Accept': '*/*',
+            'Accept-Language': 'en-US,en;q=0.9,ko;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Authorization': f'Bearer {self.bearer_token}' if self.bearer_token else '',
+            'device-id': self.device_id,
         }
 
     def get_songs(self, page: int = 0) -> Dict:
@@ -47,6 +51,8 @@ class SunoAPI:
             return response.json()
         except requests.exceptions.RequestException as e:
             print(f"API Error: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                print(f"Response: {e.response.text}")
             return {
                 'clips': [],
                 'num_total_results': 0,
@@ -126,6 +132,8 @@ class SunoAPI:
             return response.json()
         except requests.exceptions.RequestException as e:
             print(f"Generate Error: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                print(f"Response: {e.response.text}")
             return {'error': str(e)}
 
     def delete_song(self, song_id: str) -> bool:
@@ -138,7 +146,7 @@ class SunoAPI:
         Returns:
             성공 여부
         """
-        # SUNO API의 삭제 엔드포인트 (추정)
+        # SUNO API의 삭제 엔드포인트
         endpoint = f'{self.base_url}/clip/{song_id}'
 
         try:
@@ -147,6 +155,8 @@ class SunoAPI:
             return True
         except requests.exceptions.RequestException as e:
             print(f"Delete Error: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                print(f"Response: {e.response.text}")
             return False
 
     def download_song(self, song_id: str, output_path: str) -> bool:

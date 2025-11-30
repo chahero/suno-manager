@@ -9,9 +9,9 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
 def get_suno_client():
-    """세션에서 SUNO 토큰을 가져와 클라이언트 생성"""
-    token = session.get('suno_token') or os.getenv('SUNO_SESSION_TOKEN')
-    return SunoAPI(session_token=token)
+    """세션에서 SUNO Bearer 토큰을 가져와 클라이언트 생성"""
+    token = session.get('suno_token') or os.getenv('SUNO_BEARER_TOKEN')
+    return SunoAPI(bearer_token=token)
 
 @app.route('/')
 def index():
@@ -29,7 +29,7 @@ def login():
 
         if token:
             # 토큰 유효성 검사
-            client = SunoAPI(session_token=token)
+            client = SunoAPI(bearer_token=token)
             if client.is_authenticated():
                 session['suno_token'] = token
                 if request.is_json:

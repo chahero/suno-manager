@@ -45,16 +45,17 @@
             <form id="login-form" method="POST" action="{{ url_for('login') }}" class="space-y-6">
                 <div>
                     <label for="token" class="block text-sm font-medium text-gray-300 mb-2">
-                        SUNO 세션 토큰
+                        SUNO Bearer 토큰
                     </label>
-                    <input
-                        type="password"
+                    <textarea
                         id="token"
                         name="token"
+                        rows="4"
                         required
-                        class="w-full px-4 py-3 bg-dark-bg border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all"
-                        placeholder="세션 토큰을 입력하세요"
-                    />
+                        class="w-full px-4 py-3 bg-dark-bg border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all font-mono text-xs"
+                        placeholder="Bearer eyJhbGciOiJSUzI1NiIsImNhd..."
+                    ></textarea>
+                    <p class="text-xs text-gray-500 mt-1">JWT 토큰 전체를 붙여넣으세요 (Bearer 포함 또는 제외 모두 가능)</p>
                 </div>
 
                 <button
@@ -67,14 +68,20 @@
 
             <!-- 토큰 가져오기 가이드 -->
             <div class="mt-8 pt-8 border-t border-gray-700">
-                <h3 class="text-sm font-semibold text-gray-300 mb-4">토큰 가져오기</h3>
+                <h3 class="text-sm font-semibold text-gray-300 mb-4">Bearer 토큰 가져오기</h3>
                 <ol class="text-sm text-gray-400 space-y-2 list-decimal list-inside">
                     <li>SUNO 웹사이트(<a href="https://suno.com" target="_blank" class="text-purple-400 hover:text-purple-300">suno.com</a>)에 로그인</li>
                     <li>브라우저 개발자 도구 열기 (F12)</li>
-                    <li>Application/Storage → Cookies 탭</li>
-                    <li><code class="px-2 py-1 bg-dark-bg rounded text-purple-400">token</code> 쿠키 값 복사</li>
+                    <li><code class="px-2 py-1 bg-dark-bg rounded text-purple-400">Network</code> 탭 선택</li>
+                    <li>페이지 새로고침 (F5)</li>
+                    <li>요청 목록에서 <code class="px-2 py-1 bg-dark-bg rounded text-purple-400">feed</code> 또는 <code class="px-2 py-1 bg-dark-bg rounded text-purple-400">api</code>로 시작하는 요청 클릭</li>
+                    <li><code class="px-2 py-1 bg-dark-bg rounded text-purple-400">Request Headers</code>에서 <code class="px-2 py-1 bg-dark-bg rounded text-purple-400">authorization</code> 찾기</li>
+                    <li><code class="px-2 py-1 bg-dark-bg rounded text-purple-400">Bearer eyJ...</code> 전체 값 복사</li>
                     <li>위 입력란에 붙여넣기</li>
                 </ol>
+                <div class="mt-4 p-3 bg-blue-600 bg-opacity-20 border border-blue-500 rounded-lg text-xs text-blue-300">
+                    <strong>팁:</strong> "Bearer" 단어는 포함해도 되고 안 해도 됩니다. 자동으로 처리됩니다.
+                </div>
             </div>
         </div>
 
@@ -90,8 +97,13 @@
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const token = document.getElementById('token').value;
+            let token = document.getElementById('token').value.trim();
             const button = form.querySelector('button[type="submit"]');
+
+            // "Bearer " 접두사 자동 제거
+            if (token.toLowerCase().startsWith('bearer ')) {
+                token = token.substring(7).trim();
+            }
 
             button.disabled = true;
             button.textContent = '인증 중...';

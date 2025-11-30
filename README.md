@@ -4,7 +4,7 @@ SUNO AI를 활용한 모던한 음악 생성 및 관리 웹 애플리케이션�
 
 ## 기능
 
-- **로그인**: SUNO 세션 토큰을 사용한 인증
+- **로그인**: SUNO Bearer 토큰(JWT)을 사용한 인증
 - **대시보드**: 생성된 음악 통계 및 최근 곡 목록 확인
 - **음악 생성**: AI 프롬프트를 통한 음악 생성 (준비 중)
 - **라이브러리**: 생성된 음악 관리, 재생, 다운로드, 삭제
@@ -55,17 +55,20 @@ cp .env.example .env
 `.env` 파일에서 다음 값을 설정:
 
 ```
-SUNO_SESSION_TOKEN=your_actual_session_token
+SUNO_BEARER_TOKEN=your_actual_bearer_token
 SECRET_KEY=your_random_secret_key
 ```
 
-### 3. SUNO 세션 토큰 가져오기
+### 3. SUNO Bearer 토큰 가져오기
 
 1. [SUNO 웹사이트](https://suno.com)에 로그인
 2. 브라우저 개발자 도구 열기 (F12)
-3. Application/Storage → Cookies → https://suno.com
-4. `token` 쿠키 값 복사
-5. `.env` 파일의 `SUNO_SESSION_TOKEN`에 붙여넣기
+3. **Network** 탭 선택
+4. 페이지 새로고침 (F5)
+5. 요청 목록에서 `feed` 또는 `api`로 시작하는 요청 클릭
+6. **Request Headers**에서 `authorization` 헤더 찾기
+7. `Bearer eyJhbGciOiJSUzI1NiIs...` 값에서 토큰 복사 (Bearer 포함 또는 제외)
+8. `.env` 파일의 `SUNO_BEARER_TOKEN`에 붙여넣기
 
 또는 애플리케이션 실행 후 로그인 페이지에서 직접 입력할 수도 있습니다.
 
@@ -82,7 +85,7 @@ python main.py
 ### 로그인
 
 1. 브라우저에서 `http://localhost:5000` 접속
-2. SUNO 세션 토큰 입력
+2. SUNO Bearer 토큰 입력 (JWT 토큰)
 3. 로그인 버튼 클릭
 
 ### 대시보드
@@ -113,7 +116,7 @@ POST /login
 Content-Type: application/json
 
 {
-  "token": "your_suno_session_token"
+  "token": "eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIs..."
 }
 ```
 
@@ -151,8 +154,17 @@ GET /api/songs/{song_id}/download
 이 프로젝트는 실제 SUNO Studio API를 사용합니다:
 
 - **API Endpoint**: `https://studio-api.prod.suno.com/api`
-- **인증 방식**: Session Token (쿠키)
+- **인증 방식**: Bearer Token (JWT)
 - **응답 구조**: 실제 SUNO 응답 구조 사용 (`clips` 배열)
+
+### 요청 헤더 예시
+
+```http
+GET /api/feed/v2?page=0
+Host: studio-api.prod.suno.com
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIs...
+device-id: 2771cc4f-fbb1-43f7-b32a-ca1deb4c38dc
+```
 
 ### API 응답 예시
 
@@ -197,7 +209,8 @@ GET /api/songs/{song_id}/download
 ## 보안 주의사항
 
 - `.env` 파일을 절대 Git에 커밋하지 마세요
-- 세션 토큰은 민감한 정보이므로 안전하게 관리하세요
+- Bearer 토큰은 민감한 정보이므로 안전하게 관리하세요
+- Bearer 토큰은 일정 시간 후 만료되므로 주기적으로 갱신이 필요합니다
 - 프로덕션 환경에서는 `SECRET_KEY`를 반드시 변경하세요
 
 ## 라이선스
