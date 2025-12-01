@@ -10,12 +10,21 @@
             <h2 class="text-3xl font-bold text-white">음악 라이브러리</h2>
             <p class="text-gray-400 mt-2">생성된 모든 음악을 관리하세요</p>
         </div>
-        <button onclick="loadSongs()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-            </svg>
-            새로고침
-        </button>
+        <div class="flex items-center space-x-3">
+            <!-- 선택한 곡 다운로드 버튼 -->
+            <button id="batch-download-btn" onclick="batchDownload()" class="hidden px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                <span id="batch-download-count">선택한 곡 다운로드</span>
+            </button>
+            <button onclick="loadSongs()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                새로고침
+            </button>
+        </div>
     </div>
 
     <!-- 검색 및 필터 -->
@@ -86,6 +95,23 @@
         <div class="bg-dark-bg rounded-lg p-6 border border-gray-700">
             <p class="text-gray-300 whitespace-pre-wrap leading-relaxed" id="lyrics-content"></p>
         </div>
+    </div>
+</div>
+
+<!-- 다운로드 진행률 모달 -->
+<div id="download-progress-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-dark-card rounded-xl border border-gray-700 p-8 max-w-md w-full mx-4">
+        <h3 class="text-xl font-bold text-white mb-4">곡 다운로드 중</h3>
+        <div class="mb-4">
+            <div class="flex justify-between text-sm text-gray-400 mb-2">
+                <span id="progress-text">준비 중...</span>
+                <span id="progress-percentage">0%</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-2.5">
+                <div id="progress-bar" class="bg-purple-600 h-2.5 rounded-full transition-all" style="width: 0%"></div>
+            </div>
+        </div>
+        <p class="text-gray-400 text-sm">다운로드가 완료되면 자동으로 ZIP 파일이 다운로드됩니다.</p>
     </div>
 </div>
 
@@ -185,6 +211,16 @@
             return `
             <div class="bg-dark-card rounded-xl border border-gray-700 p-6 hover:border-purple-500 transition-all">
                 <div class="flex items-start justify-between">
+                    <!-- 체크박스 -->
+                    <div class="flex items-start mr-4 pt-2">
+                        <input type="checkbox"
+                               class="song-checkbox w-5 h-5 rounded border-gray-600 bg-dark-bg text-purple-600 focus:ring-purple-500 focus:ring-2 cursor-pointer"
+                               data-song-id="${song.id}"
+                               data-song-title="${(song.title || 'Untitled').replace(/"/g, '&quot;')}"
+                               onchange="updateBatchDownloadButton()"
+                        />
+                    </div>
+
                     <div class="flex items-start space-x-4 flex-1">
                         <!-- 앨범 커버 -->
                         ${imageUrl ?
@@ -333,6 +369,94 @@
         // event가 있고, 배경을 클릭한 경우가 아니면 무시
         if (event && event.target.id !== 'lyrics-modal') return;
         document.getElementById('lyrics-modal').classList.add('hidden');
+    }
+
+    // 일괄 다운로드 버튼 업데이트
+    function updateBatchDownloadButton() {
+        const checkboxes = document.querySelectorAll('.song-checkbox:checked');
+        const count = checkboxes.length;
+        const btn = document.getElementById('batch-download-btn');
+        const countText = document.getElementById('batch-download-count');
+
+        if (count > 0) {
+            btn.classList.remove('hidden');
+            countText.textContent = `선택한 곡 다운로드 (${count})`;
+        } else {
+            btn.classList.add('hidden');
+        }
+    }
+
+    // 일괄 다운로드
+    async function batchDownload() {
+        const checkboxes = document.querySelectorAll('.song-checkbox:checked');
+        const songIds = Array.from(checkboxes).map(cb => cb.dataset.songId);
+
+        if (songIds.length === 0) {
+            alert('다운로드할 곡을 선택해주세요.');
+            return;
+        }
+
+        // 진행률 모달 표시
+        const modal = document.getElementById('download-progress-modal');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const progressPercentage = document.getElementById('progress-percentage');
+
+        modal.classList.remove('hidden');
+        progressBar.style.width = '0%';
+        progressText.textContent = '다운로드 시작...';
+        progressPercentage.textContent = '0%';
+
+        try {
+            const response = await fetch('/api/songs/batch-download', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ song_ids: songIds })
+            });
+
+            if (!response.ok) {
+                throw new Error('다운로드 실패');
+            }
+
+            // 진행률 업데이트 (간단 버전)
+            progressBar.style.width = '50%';
+            progressText.textContent = `${songIds.length}개 곡 다운로드 중...`;
+            progressPercentage.textContent = '50%';
+
+            // ZIP 파일 다운로드
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+
+            // 파일명 생성
+            const date = new Date().toISOString().split('T')[0];
+            a.download = `suno-songs-${date}.zip`;
+
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            // 완료
+            progressBar.style.width = '100%';
+            progressText.textContent = '다운로드 완료!';
+            progressPercentage.textContent = '100%';
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                // 체크박스 해제
+                checkboxes.forEach(cb => cb.checked = false);
+                updateBatchDownloadButton();
+            }, 1500);
+
+        } catch (error) {
+            console.error('다운로드 실패:', error);
+            alert('다운로드에 실패했습니다.');
+            modal.classList.add('hidden');
+        }
     }
 
     // 검색 및 정렬 이벤트 리스너

@@ -1,5 +1,9 @@
 from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
 import os
+import zipfile
+import tempfile
+from datetime import datetime
+from io import BytesIO
 from dotenv import load_dotenv
 from suno_api import SunoAPI
 
@@ -197,6 +201,65 @@ def api_download_song(song_id):
         return send_file(output_path, as_attachment=True)
 
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/songs/batch-download', methods=['POST'])
+def api_batch_download():
+    """여러 곡을 ZIP 파일로 일괄 다운로드 API"""
+    try:
+        client = get_suno_client()
+        if not client.is_authenticated():
+            return jsonify({'error': 'Not authenticated'}), 401
+
+        data = request.json
+        song_ids = data.get('song_ids', [])
+
+        if not song_ids:
+            return jsonify({'error': 'No songs selected'}), 400
+
+        # 메모리에 ZIP 파일 생성
+        memory_zip = BytesIO()
+
+        # 임시 디렉토리 생성
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # 각 곡 다운로드
+            downloaded_files = []
+            for song_id in song_ids:
+                song = client.get_song(song_id)
+                if not song:
+                    continue
+
+                # 파일명 생성 (제목 + ID)
+                title = song.get('title', 'Untitled').replace('/', '-').replace('\\', '-')
+                filename = f"{title}_{song_id}.mp3"
+                filepath = os.path.join(temp_dir, filename)
+
+                # 다운로드
+                if client.download_song(song_id, filepath):
+                    downloaded_files.append((filepath, filename))
+
+            if not downloaded_files:
+                return jsonify({'error': 'Failed to download any songs'}), 500
+
+            # ZIP 파일 생성 (메모리에)
+            with zipfile.ZipFile(memory_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for filepath, filename in downloaded_files:
+                    zipf.write(filepath, filename)
+
+        # ZIP 파일 전송 준비
+        memory_zip.seek(0)
+        date_str = datetime.now().strftime('%Y-%m-%d')
+        zip_filename = f'suno-songs-{date_str}.zip'
+
+        return send_file(
+            memory_zip,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=zip_filename
+        )
+
+    except Exception as e:
+        print(f"Batch download error: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
