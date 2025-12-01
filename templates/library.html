@@ -18,6 +18,13 @@
                 </svg>
                 <span id="batch-download-count">선택한 곡 다운로드</span>
             </button>
+            <!-- 선택한 곡 삭제 버튼 -->
+            <button id="batch-delete-btn" onclick="showBatchDeleteModal()" class="hidden px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                <span id="batch-delete-count">선택한 곡 삭제</span>
+            </button>
             <button onclick="loadSongs()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -130,6 +137,45 @@
         </div>
     </div>
 </div>
+
+<!-- 일괄 삭제 확인 모달 -->
+<div id="batch-delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-dark-card rounded-xl border border-gray-700 p-8 max-w-md w-full mx-4">
+        <div class="flex items-center mb-4">
+            <svg class="w-8 h-8 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <h3 class="text-xl font-bold text-white">선택한 곡 삭제</h3>
+        </div>
+        <p class="text-gray-400 mb-2">정말로 선택한 <span id="batch-delete-total" class="text-white font-bold">0</span>개의 음악을 삭제하시겠습니까?</p>
+        <p class="text-red-400 text-sm mb-6">이 작업은 되돌릴 수 없습니다.</p>
+        <div class="flex items-center space-x-4">
+            <button onclick="closeBatchDeleteModal()" class="flex-1 px-4 py-3 bg-dark-bg hover:bg-dark-hover text-white rounded-lg transition-colors">
+                취소
+            </button>
+            <button onclick="confirmBatchDelete()" class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                삭제
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 일괄 삭제 진행률 모달 -->
+<div id="delete-progress-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-dark-card rounded-xl border border-gray-700 p-8 max-w-md w-full mx-4">
+        <h3 class="text-xl font-bold text-white mb-4">곡 삭제 중</h3>
+        <div class="mb-4">
+            <div class="flex justify-between text-sm text-gray-400 mb-2">
+                <span id="delete-progress-text">준비 중...</span>
+                <span id="delete-progress-percentage">0%</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-2.5">
+                <div id="delete-progress-bar" class="bg-red-600 h-2.5 rounded-full transition-all" style="width: 0%"></div>
+            </div>
+        </div>
+        <p class="text-gray-400 text-sm">삭제가 완료되면 자동으로 목록이 새로고침됩니다.</p>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -217,7 +263,7 @@
                                class="song-checkbox w-5 h-5 rounded border-gray-600 bg-dark-bg text-purple-600 focus:ring-purple-500 focus:ring-2 cursor-pointer"
                                data-song-id="${song.id}"
                                data-song-title="${(song.title || 'Untitled').replace(/"/g, '&quot;')}"
-                               onchange="updateBatchDownloadButton()"
+                               onchange="updateBatchButtons()"
                         />
                     </div>
 
@@ -371,18 +417,28 @@
         document.getElementById('lyrics-modal').classList.add('hidden');
     }
 
-    // 일괄 다운로드 버튼 업데이트
-    function updateBatchDownloadButton() {
+    // 일괄 다운로드/삭제 버튼 업데이트
+    function updateBatchButtons() {
         const checkboxes = document.querySelectorAll('.song-checkbox:checked');
         const count = checkboxes.length;
-        const btn = document.getElementById('batch-download-btn');
-        const countText = document.getElementById('batch-download-count');
+
+        // 다운로드 버튼
+        const downloadBtn = document.getElementById('batch-download-btn');
+        const downloadCountText = document.getElementById('batch-download-count');
+
+        // 삭제 버튼
+        const deleteBtn = document.getElementById('batch-delete-btn');
+        const deleteCountText = document.getElementById('batch-delete-count');
 
         if (count > 0) {
-            btn.classList.remove('hidden');
-            countText.textContent = `선택한 곡 다운로드 (${count})`;
+            downloadBtn.classList.remove('hidden');
+            downloadCountText.textContent = `선택한 곡 다운로드 (${count})`;
+
+            deleteBtn.classList.remove('hidden');
+            deleteCountText.textContent = `선택한 곡 삭제 (${count})`;
         } else {
-            btn.classList.add('hidden');
+            downloadBtn.classList.add('hidden');
+            deleteBtn.classList.add('hidden');
         }
     }
 
@@ -449,12 +505,105 @@
                 modal.classList.add('hidden');
                 // 체크박스 해제
                 checkboxes.forEach(cb => cb.checked = false);
-                updateBatchDownloadButton();
+                updateBatchButtons();
             }, 1500);
 
         } catch (error) {
             console.error('다운로드 실패:', error);
             alert('다운로드에 실패했습니다.');
+            modal.classList.add('hidden');
+        }
+    }
+
+    // 일괄 삭제 모달 표시
+    function showBatchDeleteModal() {
+        const checkboxes = document.querySelectorAll('.song-checkbox:checked');
+        const count = checkboxes.length;
+
+        if (count === 0) {
+            alert('삭제할 곡을 선택해주세요.');
+            return;
+        }
+
+        document.getElementById('batch-delete-total').textContent = count;
+        document.getElementById('batch-delete-modal').classList.remove('hidden');
+    }
+
+    // 일괄 삭제 모달 닫기
+    function closeBatchDeleteModal() {
+        document.getElementById('batch-delete-modal').classList.add('hidden');
+    }
+
+    // 일괄 삭제 확인
+    async function confirmBatchDelete() {
+        const checkboxes = document.querySelectorAll('.song-checkbox:checked');
+        const songIds = Array.from(checkboxes).map(cb => cb.dataset.songId);
+
+        if (songIds.length === 0) {
+            return;
+        }
+
+        // 확인 모달 닫기
+        closeBatchDeleteModal();
+
+        // 진행률 모달 표시
+        const modal = document.getElementById('delete-progress-modal');
+        const progressBar = document.getElementById('delete-progress-bar');
+        const progressText = document.getElementById('delete-progress-text');
+        const progressPercentage = document.getElementById('delete-progress-percentage');
+
+        modal.classList.remove('hidden');
+        progressBar.style.width = '0%';
+        progressText.textContent = '삭제 시작...';
+        progressPercentage.textContent = '0%';
+
+        try {
+            let successCount = 0;
+            let failCount = 0;
+
+            // 각 곡을 순차적으로 삭제
+            for (let i = 0; i < songIds.length; i++) {
+                const songId = songIds[i];
+
+                try {
+                    const response = await fetch(`/api/songs/${songId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                } catch (error) {
+                    console.error(`곡 ${songId} 삭제 실패:`, error);
+                    failCount++;
+                }
+
+                // 진행률 업데이트
+                const progress = ((i + 1) / songIds.length) * 100;
+                progressBar.style.width = `${progress}%`;
+                progressText.textContent = `${i + 1}/${songIds.length} 삭제 중...`;
+                progressPercentage.textContent = `${Math.round(progress)}%`;
+            }
+
+            // 완료
+            progressBar.style.width = '100%';
+            progressText.textContent = `삭제 완료! (성공: ${successCount}, 실패: ${failCount})`;
+            progressPercentage.textContent = '100%';
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                // 체크박스 해제
+                checkboxes.forEach(cb => cb.checked = false);
+                updateBatchButtons();
+                // 목록 새로고침
+                loadSongs();
+            }, 2000);
+
+        } catch (error) {
+            console.error('일괄 삭제 실패:', error);
+            alert('일괄 삭제에 실패했습니다.');
             modal.classList.add('hidden');
         }
     }
