@@ -181,8 +181,15 @@
                     </div>
                 </div>
 
-                <!-- 오른쪽: 볼륨 -->
+                <!-- 오른쪽: 가사 + 볼륨 -->
                 <div class="flex items-center space-x-3 flex-1 justify-end">
+                    <!-- 가사 버튼 -->
+                    <button onclick="globalPlayer.showLyrics()" class="p-2 text-gray-400 hover:text-white transition-colors" title="가사 보기">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </button>
+
                     <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
                     </svg>
@@ -203,11 +210,30 @@
         <audio id="global-audio" preload="metadata"></audio>
     </div>
 
+    <!-- 가사 모달 -->
+    <div id="player-lyrics-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onclick="globalPlayer.closeLyrics(event)">
+        <div class="bg-dark-card rounded-xl border border-gray-700 p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-2xl font-bold text-white" id="player-lyrics-title">가사</h3>
+                <button onclick="globalPlayer.closeLyrics()" class="p-2 hover:bg-dark-hover rounded-lg transition-colors">
+                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="bg-dark-bg rounded-lg p-6 border border-gray-700">
+                <p class="text-gray-300 whitespace-pre-wrap leading-relaxed" id="player-lyrics-content"></p>
+            </div>
+        </div>
+    </div>
+
     <!-- 전역 플레이어 스크립트 -->
     <script>
         const globalPlayer = {
             audio: null,
             currentSongId: null,
+            currentTitle: '',
+            currentLyrics: '',
             playlist: [],
             currentIndex: -1,
 
@@ -225,13 +251,15 @@
                 this.audio.volume = 0.7;
             },
 
-            play(songId, audioUrl, title, cover, tags) {
+            play(songId, audioUrl, title, cover, tags, lyrics) {
                 this.currentSongId = songId;
+                this.currentTitle = title || 'Untitled';
+                this.currentLyrics = lyrics || '';
                 this.audio.src = audioUrl;
                 this.audio.play();
 
                 // UI 업데이트
-                document.getElementById('player-title').textContent = title || 'Untitled';
+                document.getElementById('player-title').textContent = this.currentTitle;
                 document.getElementById('player-tags').textContent = tags || 'No tags';
                 document.getElementById('player-cover').src = cover || '/static/default-cover.png';
 
@@ -302,6 +330,23 @@
                 const mins = Math.floor(seconds / 60);
                 const secs = Math.floor(seconds % 60);
                 return `${mins}:${secs.toString().padStart(2, '0')}`;
+            },
+
+            showLyrics() {
+                if (!this.currentLyrics) {
+                    alert('가사 정보가 없습니다.');
+                    return;
+                }
+
+                document.getElementById('player-lyrics-title').textContent = this.currentTitle;
+                document.getElementById('player-lyrics-content').textContent = this.currentLyrics;
+                document.getElementById('player-lyrics-modal').classList.remove('hidden');
+            },
+
+            closeLyrics(event) {
+                // event가 있고, 배경을 클릭한 경우가 아니면 무시
+                if (event && event.target.id !== 'player-lyrics-modal') return;
+                document.getElementById('player-lyrics-modal').classList.add('hidden');
             }
         };
 
