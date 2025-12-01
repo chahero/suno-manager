@@ -72,6 +72,23 @@
     </div>
 </div>
 
+<!-- 가사 보기 모달 -->
+<div id="lyrics-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onclick="closeLyricsModal(event)">
+    <div class="bg-dark-card rounded-xl border border-gray-700 p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-2xl font-bold text-white" id="lyrics-title">가사</h3>
+            <button onclick="closeLyricsModal()" class="p-2 hover:bg-dark-hover rounded-lg transition-colors">
+                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="bg-dark-bg rounded-lg p-6 border border-gray-700">
+            <p class="text-gray-300 whitespace-pre-wrap leading-relaxed" id="lyrics-content"></p>
+        </div>
+    </div>
+</div>
+
 <!-- 삭제 확인 모달 -->
 <div id="delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
     <div class="bg-dark-card rounded-xl border border-gray-700 p-8 max-w-md w-full mx-4">
@@ -182,7 +199,7 @@
                         <!-- 음악 정보 -->
                         <div class="flex-1 min-w-0">
                             <h3 class="text-lg font-bold text-white mb-1">${song.title || 'Untitled'}</h3>
-                            <p class="text-sm text-gray-400 mb-2 line-clamp-2">${(song.metadata?.prompt || 'No description').substring(0, 150)}...</p>
+                            <p onclick="showLyricsModal('${song.title || 'Untitled'}', \`${(song.metadata?.prompt || 'No description').replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)" class="text-sm text-gray-400 mb-2 line-clamp-2 cursor-pointer hover:text-purple-400 transition-colors" title="클릭하여 전체 가사 보기">${(song.metadata?.prompt || 'No description').substring(0, 150)}...</p>
                             <div class="flex items-center flex-wrap gap-2 text-sm text-gray-500">
                                 <span class="flex items-center">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -279,6 +296,20 @@
             console.error('삭제 실패:', error);
             alert('삭제에 실패했습니다.');
         }
+    }
+
+    // 가사 모달 표시
+    function showLyricsModal(title, lyrics) {
+        document.getElementById('lyrics-title').textContent = title;
+        document.getElementById('lyrics-content').textContent = lyrics || '가사가 없습니다.';
+        document.getElementById('lyrics-modal').classList.remove('hidden');
+    }
+
+    // 가사 모달 닫기
+    function closeLyricsModal(event) {
+        // event가 있고, 배경을 클릭한 경우가 아니면 무시
+        if (event && event.target.id !== 'lyrics-modal') return;
+        document.getElementById('lyrics-modal').classList.add('hidden');
     }
 
     // 검색 및 정렬 이벤트 리스너
