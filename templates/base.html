@@ -25,6 +25,47 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
+
+        /* 플레이어가 표시될 때 메인 컨텐츠 하단 여백 */
+        .player-active main {
+            padding-bottom: 96px;
+        }
+
+        /* 이퀄라이저 애니메이션 */
+        @keyframes equalize {
+            0%, 100% { height: 4px; }
+            50% { height: 16px; }
+        }
+
+        .equalizer-bar {
+            width: 3px;
+            background: #a855f7;
+            border-radius: 3px;
+            animation: equalize 0.8s ease-in-out infinite;
+        }
+
+        .equalizer-bar:nth-child(1) { animation-delay: 0s; }
+        .equalizer-bar:nth-child(2) { animation-delay: 0.2s; }
+        .equalizer-bar:nth-child(3) { animation-delay: 0.4s; }
+
+        /* 진행바 커스텀 */
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #a855f7;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            background: #a855f7;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
     </style>
 </head>
 <body class="bg-dark-bg text-gray-100">
@@ -85,6 +126,190 @@
             </div>
         </main>
     </div>
+
+    <!-- 하단 고정 플레이어 -->
+    <div id="bottom-player" class="hidden fixed bottom-0 left-0 right-0 bg-dark-card border-t border-gray-700 z-40">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between gap-4">
+                <!-- 왼쪽: 곡 정보 -->
+                <div class="flex items-center space-x-4 flex-1 min-w-0">
+                    <img id="player-cover" src="" alt="Album Cover" class="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+                    <div class="min-w-0 flex-1">
+                        <h4 id="player-title" class="text-white font-semibold truncate">곡 제목</h4>
+                        <p id="player-tags" class="text-gray-400 text-sm truncate">태그</p>
+                    </div>
+                </div>
+
+                <!-- 중앙: 컨트롤 -->
+                <div class="flex flex-col items-center flex-1 max-w-2xl">
+                    <div class="flex items-center space-x-4 mb-2">
+                        <button onclick="globalPlayer.previous()" class="p-2 text-gray-400 hover:text-white transition-colors" title="이전 곡">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                            </svg>
+                        </button>
+
+                        <button id="player-play-btn" onclick="globalPlayer.togglePlay()" class="p-3 bg-purple-600 hover:bg-purple-700 rounded-full transition-colors" title="재생/일시정지">
+                            <svg id="player-play-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                            <svg id="player-pause-icon" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                            </svg>
+                        </button>
+
+                        <button onclick="globalPlayer.next()" class="p-2 text-gray-400 hover:text-white transition-colors" title="다음 곡">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M16 18h2V6h-2zm-11-7l8.5 6V5z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- 진행바 -->
+                    <div class="w-full flex items-center space-x-2">
+                        <span id="player-current-time" class="text-xs text-gray-400 w-10">0:00</span>
+                        <input
+                            type="range"
+                            id="player-progress"
+                            min="0"
+                            max="100"
+                            value="0"
+                            class="flex-1 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                            oninput="globalPlayer.seek(this.value)"
+                        />
+                        <span id="player-duration" class="text-xs text-gray-400 w-10">0:00</span>
+                    </div>
+                </div>
+
+                <!-- 오른쪽: 볼륨 -->
+                <div class="flex items-center space-x-3 flex-1 justify-end">
+                    <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+                    </svg>
+                    <input
+                        type="range"
+                        id="player-volume"
+                        min="0"
+                        max="100"
+                        value="70"
+                        class="w-24 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                        oninput="globalPlayer.setVolume(this.value)"
+                    />
+                </div>
+            </div>
+        </div>
+
+        <!-- 숨겨진 오디오 엘리먼트 -->
+        <audio id="global-audio" preload="metadata"></audio>
+    </div>
+
+    <!-- 전역 플레이어 스크립트 -->
+    <script>
+        const globalPlayer = {
+            audio: null,
+            currentSongId: null,
+            playlist: [],
+            currentIndex: -1,
+
+            init() {
+                this.audio = document.getElementById('global-audio');
+
+                // 오디오 이벤트 리스너
+                this.audio.addEventListener('loadedmetadata', () => this.updateDuration());
+                this.audio.addEventListener('timeupdate', () => this.updateProgress());
+                this.audio.addEventListener('ended', () => this.next());
+                this.audio.addEventListener('play', () => this.updatePlayButton(true));
+                this.audio.addEventListener('pause', () => this.updatePlayButton(false));
+
+                // 초기 볼륨 설정
+                this.audio.volume = 0.7;
+            },
+
+            play(songId, audioUrl, title, cover, tags) {
+                this.currentSongId = songId;
+                this.audio.src = audioUrl;
+                this.audio.play();
+
+                // UI 업데이트
+                document.getElementById('player-title').textContent = title || 'Untitled';
+                document.getElementById('player-tags').textContent = tags || 'No tags';
+                document.getElementById('player-cover').src = cover || '/static/default-cover.png';
+
+                // 플레이어 표시
+                document.getElementById('bottom-player').classList.remove('hidden');
+                document.body.classList.add('player-active');
+
+                // 라이브러리 페이지의 재생 중 표시 업데이트
+                if (typeof updateNowPlaying === 'function') {
+                    updateNowPlaying(songId);
+                }
+            },
+
+            togglePlay() {
+                if (this.audio.paused) {
+                    this.audio.play();
+                } else {
+                    this.audio.pause();
+                }
+            },
+
+            seek(value) {
+                const time = (this.audio.duration / 100) * value;
+                this.audio.currentTime = time;
+            },
+
+            setVolume(value) {
+                this.audio.volume = value / 100;
+            },
+
+            next() {
+                // 플레이리스트 기능은 나중에 구현
+                console.log('다음 곡');
+            },
+
+            previous() {
+                // 플레이리스트 기능은 나중에 구현
+                console.log('이전 곡');
+            },
+
+            updateProgress() {
+                if (this.audio.duration) {
+                    const progress = (this.audio.currentTime / this.audio.duration) * 100;
+                    document.getElementById('player-progress').value = progress;
+                    document.getElementById('player-current-time').textContent = this.formatTime(this.audio.currentTime);
+                }
+            },
+
+            updateDuration() {
+                document.getElementById('player-duration').textContent = this.formatTime(this.audio.duration);
+            },
+
+            updatePlayButton(isPlaying) {
+                const playIcon = document.getElementById('player-play-icon');
+                const pauseIcon = document.getElementById('player-pause-icon');
+
+                if (isPlaying) {
+                    playIcon.classList.add('hidden');
+                    pauseIcon.classList.remove('hidden');
+                } else {
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
+                }
+            },
+
+            formatTime(seconds) {
+                if (isNaN(seconds)) return '0:00';
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+        };
+
+        // 페이지 로드 시 플레이어 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            globalPlayer.init();
+        });
+    </script>
 
     {% block scripts %}{% endblock %}
 </body>
