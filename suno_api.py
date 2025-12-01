@@ -11,7 +11,7 @@ class SunoAPI:
         Args:
             bearer_token: SUNO Bearer 토큰 (JWT)
         """
-        self.bearer_token = bearer_token or os.getenv('SUNO_BEARER_TOKEN')
+        self.bearer_token = bearer_token or os.getenv('SUNO_BEARER_TOKEN') or self._get_token_from_browser()
         self.base_url = 'https://studio-api.prod.suno.com/api'
 
         # 디바이스 ID 생성 또는 환경 변수에서 가져오기
@@ -202,3 +202,48 @@ class SunoAPI:
             return 'clips' in result and result.get('num_total_results', 0) >= 0
         except:
             return False
+
+    def _get_token_from_browser(self) -> Optional[str]:
+        """
+        브라우저 쿠키에서 SUNO 세션 토큰 읽기
+        Chrome, Edge, Firefox 등에서 자동으로 토큰을 가져옵니다.
+
+        Returns:
+            브라우저에서 찾은 토큰 또는 None
+        """
+        try:
+            import browser_cookie3
+
+            # 여러 브라우저에서 시도
+            browsers = [
+                ('Chrome', browser_cookie3.chrome),
+                ('Edge', browser_cookie3.edge),
+                ('Firefox', browser_cookie3.firefox),
+                ('Chromium', browser_cookie3.chromium),
+            ]
+
+            for browser_name, browser_func in browsers:
+                try:
+                    cookies = browser_func(domain_name='suno.com')
+
+                    # __session 또는 __session_으로 시작하는 쿠키 찾기
+                    for cookie in cookies:
+                        if cookie.name.startswith('__session'):
+                            token = cookie.value
+                            if token and len(token) > 100:  # JWT 토큰은 보통 길이가 깁니다
+                                print(f"✓ {browser_name} 브라우저에서 SUNO 토큰을 찾았습니다.")
+                                return token
+                except Exception as e:
+                    # 해당 브라우저가 없거나 쿠키를 읽을 수 없는 경우 무시
+                    continue
+
+            print("브라우저 쿠키에서 SUNO 토큰을 찾을 수 없습니다.")
+            return None
+
+        except ImportError:
+            print("browser-cookie3 패키지가 설치되지 않았습니다.")
+            print("설치: pip install browser-cookie3")
+            return None
+        except Exception as e:
+            print(f"브라우저 쿠키 읽기 오류: {e}")
+            return None

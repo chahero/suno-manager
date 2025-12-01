@@ -183,7 +183,8 @@ def api_download_song(song_id):
         if not client.is_authenticated():
             return jsonify({'error': 'Not authenticated'}), 401
 
-        output_dir = os.path.join('static', 'audio')
+        # 환경 변수에서 다운로드 폴더 경로 가져오기 (기본값: downloads)
+        output_dir = os.getenv('DOWNLOAD_FOLDER', 'downloads')
         os.makedirs(output_dir, exist_ok=True)
 
         output_path = os.path.join(output_dir, f'{song_id}.mp3')
