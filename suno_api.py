@@ -202,3 +202,27 @@ class SunoAPI:
             return 'clips' in result and result.get('num_total_results', 0) >= 0
         except:
             return False
+
+    def get_billing_info(self) -> Dict:
+        """
+        크레딧 및 구독 정보 조회
+
+        Returns:
+            크레딧, 플랜, 구독 정보
+        """
+        endpoint = f'{self.base_url}/billing/info/'
+
+        try:
+            response = self.session.get(endpoint, headers=self.headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Billing Info Error: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                print(f"Response: {e.response.text}")
+            return {
+                'total_credits_left': 0,
+                'monthly_limit': 0,
+                'monthly_usage': 0,
+                'plan': {'name': 'Unknown'}
+            }

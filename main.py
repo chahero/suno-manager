@@ -72,6 +72,28 @@ def api_auth_check():
     is_auth = client.is_authenticated()
     return jsonify({'authenticated': is_auth})
 
+@app.route('/api/billing/info')
+def api_billing_info():
+    """크레딧 및 구독 정보 조회"""
+    try:
+        client = get_suno_client()
+        if not client.is_authenticated():
+            return jsonify({'error': 'Not authenticated'}), 401
+
+        billing_info = client.get_billing_info()
+
+        # 필요한 정보만 추출
+        return jsonify({
+            'credits': billing_info.get('total_credits_left', 0),
+            'monthly_limit': billing_info.get('monthly_limit', 0),
+            'monthly_usage': billing_info.get('monthly_usage', 0),
+            'plan_name': billing_info.get('plan', {}).get('name', 'Unknown'),
+            'renews_on': billing_info.get('renews_on', '')
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/generate', methods=['POST'])
 def api_generate():
     """음악 생성 API 엔드포인트"""

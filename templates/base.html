@@ -106,6 +106,24 @@
             </nav>
 
             <div class="p-4 border-t border-gray-700 space-y-2">
+                <!-- 크레딧 정보 -->
+                <div id="credits-info" class="px-4 py-3 bg-dark-bg rounded-lg border border-gray-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-gray-500 uppercase">크레딧</span>
+                        <span class="text-xs text-purple-400" id="plan-name">-</span>
+                    </div>
+                    <div class="flex items-baseline space-x-1 mb-2">
+                        <span class="text-2xl font-bold text-white" id="credits-count">-</span>
+                        <span class="text-sm text-gray-400">/ <span id="credits-limit">-</span></span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-1.5 mb-2">
+                        <div id="credits-bar" class="bg-purple-600 h-1.5 rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        <span id="renews-text">-</span>
+                    </div>
+                </div>
+
                 <div class="flex items-center px-4 py-3 bg-dark-bg rounded-lg">
                     <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
                     <span class="text-sm text-gray-400">API 연결됨</span>
@@ -353,7 +371,42 @@
         // 페이지 로드 시 플레이어 초기화
         document.addEventListener('DOMContentLoaded', () => {
             globalPlayer.init();
+            loadCreditsInfo();
         });
+
+        // 크레딧 정보 로드
+        async function loadCreditsInfo() {
+            try {
+                const response = await fetch('/api/billing/info');
+                if (!response.ok) return;
+
+                const data = await response.json();
+
+                // 크레딧 숫자 업데이트
+                document.getElementById('credits-count').textContent = data.credits.toLocaleString();
+                document.getElementById('credits-limit').textContent = data.monthly_limit.toLocaleString();
+                document.getElementById('plan-name').textContent = data.plan_name;
+
+                // 진행바 업데이트
+                const percentage = data.monthly_limit > 0 ? (data.credits / data.monthly_limit) * 100 : 0;
+                document.getElementById('credits-bar').style.width = `${percentage}%`;
+
+                // 갱신 날짜 포맷
+                if (data.renews_on) {
+                    const renewDate = new Date(data.renews_on);
+                    const formatted = renewDate.toLocaleDateString('ko-KR', {
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                    document.getElementById('renews-text').textContent = `${formatted} 갱신`;
+                }
+            } catch (error) {
+                console.error('크레딧 정보 로드 실패:', error);
+            }
+        }
+
+        // 5분마다 크레딧 정보 자동 갱신
+        setInterval(loadCreditsInfo, 5 * 60 * 1000);
     </script>
 
     {% block scripts %}{% endblock %}
