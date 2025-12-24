@@ -88,13 +88,13 @@
                     Dashboard
                 </a>
 
-                <a href="{{ url_for('generate') }}"
-                   class="flex items-center px-4 py-3 rounded-lg transition-colors {% if request.endpoint == 'generate' %}bg-purple-600 text-white{% else %}text-gray-300 hover:bg-dark-hover{% endif %}">
+                <div class="flex items-center px-4 py-3 rounded-lg text-gray-500 cursor-not-allowed opacity-60">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
                     </svg>
-                    Generate Music
-                </a>
+                    <span>Generate Music</span>
+                    <span class="ml-auto text-xs bg-gray-700 px-2 py-0.5 rounded">Soon</span>
+                </div>
 
                 <a href="{{ url_for('library') }}"
                    class="flex items-center px-4 py-3 rounded-lg transition-colors {% if request.endpoint == 'library' %}bg-purple-600 text-white{% else %}text-gray-300 hover:bg-dark-hover{% endif %}">

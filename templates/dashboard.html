@@ -82,8 +82,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
                     </svg>
                     <p>No songs created yet</p>
-                    <a href="{{ url_for('generate') }}" class="inline-block mt-4 px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors">
-                        Create Your First Song
+                    <a href="{{ url_for('library') }}" class="inline-block mt-4 px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors">
+                        Go to Library
                     </a>
                 </div>
             </div>
@@ -92,12 +92,15 @@
 
     <!-- Quick Actions -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl p-6 text-white">
-            <h3 class="text-xl font-bold mb-2">Generate New Music</h3>
-            <p class="text-purple-100 mb-4">Create original music with AI</p>
-            <a href="{{ url_for('generate') }}" class="inline-block px-6 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                Get Started
-            </a>
+        <div class="bg-gradient-to-br from-gray-600 to-gray-700 rounded-xl p-6 text-white opacity-75">
+            <div class="flex items-center mb-2">
+                <h3 class="text-xl font-bold">Generate New Music</h3>
+                <span class="ml-3 text-xs bg-gray-500 px-2 py-1 rounded">Coming Soon</span>
+            </div>
+            <p class="text-gray-300 mb-4">Create original music with AI</p>
+            <span class="inline-block px-6 py-3 bg-gray-500 text-gray-300 rounded-lg font-semibold cursor-not-allowed">
+                Coming Soon
+            </span>
         </div>
 
         <div class="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl p-6 text-white">

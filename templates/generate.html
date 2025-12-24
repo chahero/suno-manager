@@ -3,249 +3,53 @@
 {% block title %}Generate Music - SUNO Manager{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto space-y-6">
-    <!-- Header -->
-    <div>
-        <h2 class="text-3xl font-bold text-white">AI Music Generation</h2>
-        <p class="text-gray-400 mt-2">Enter a prompt to create original music</p>
-    </div>
+<div class="max-w-4xl mx-auto">
+    <!-- Coming Soon Card -->
+    <div class="bg-dark-card rounded-xl border border-gray-700 p-12 text-center">
+        <div class="w-24 h-24 mx-auto mb-6 bg-purple-600 bg-opacity-20 rounded-full flex items-center justify-center">
+            <svg class="w-12 h-12 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+            </svg>
+        </div>
 
-    <!-- Music Generation Form -->
-    <div class="bg-dark-card rounded-xl border border-gray-700 p-8">
-        <form id="generate-form" class="space-y-6">
-            <!-- Prompt Input -->
-            <div>
-                <label for="prompt" class="block text-sm font-medium text-gray-300 mb-2">
-                    Music Description Prompt
-                </label>
-                <textarea
-                    id="prompt"
-                    name="prompt"
-                    rows="4"
-                    class="w-full px-4 py-3 bg-dark-bg border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all"
-                    placeholder="e.g., Upbeat pop music with acoustic guitar and piano"
-                    required
-                ></textarea>
-                <p class="text-sm text-gray-500 mt-2">Describe the genre, mood, instruments, etc. of the music you want</p>
-            </div>
+        <h2 class="text-3xl font-bold text-white mb-4">AI Music Generation</h2>
+        <span class="inline-block px-4 py-2 bg-purple-600 bg-opacity-20 text-purple-400 rounded-full text-sm font-semibold mb-6">
+            Coming Soon
+        </span>
 
-            <!-- Music Duration -->
-            <div>
-                <label for="duration" class="block text-sm font-medium text-gray-300 mb-2">
-                    Duration (seconds)
-                </label>
-                <div class="flex items-center space-x-4">
-                    <input
-                        type="range"
-                        id="duration"
-                        name="duration"
-                        min="15"
-                        max="180"
-                        value="30"
-                        class="flex-1 h-2 bg-dark-bg rounded-lg appearance-none cursor-pointer accent-purple-600"
-                    />
-                    <span id="duration-value" class="text-white font-semibold w-16 text-right">30s</span>
-                </div>
-            </div>
+        <p class="text-gray-400 mb-8 max-w-md mx-auto">
+            This feature is currently under development.<br>
+            Soon you'll be able to create original music with AI prompts.
+        </p>
 
-            <!-- Advanced Options -->
-            <details class="group">
-                <summary class="cursor-pointer text-purple-400 hover:text-purple-300 transition-colors flex items-center space-x-2">
-                    <svg class="w-5 h-5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                    <span>Advanced Options</span>
-                </summary>
-                <div class="mt-4 space-y-4 pl-7">
-                    <!-- Genre -->
-                    <div>
-                        <label for="genre" class="block text-sm font-medium text-gray-300 mb-2">Genre</label>
-                        <select id="genre" name="genre" class="w-full px-4 py-3 bg-dark-bg border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500">
-                            <option value="">Auto</option>
-                            <option value="pop">Pop</option>
-                            <option value="rock">Rock</option>
-                            <option value="jazz">Jazz</option>
-                            <option value="classical">Classical</option>
-                            <option value="electronic">Electronic</option>
-                            <option value="hiphop">Hip Hop</option>
-                            <option value="rnb">R&B</option>
-                            <option value="country">Country</option>
-                        </select>
-                    </div>
-
-                    <!-- Mood -->
-                    <div>
-                        <label for="mood" class="block text-sm font-medium text-gray-300 mb-2">Mood</label>
-                        <select id="mood" name="mood" class="w-full px-4 py-3 bg-dark-bg border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500">
-                            <option value="">Auto</option>
-                            <option value="happy">Happy</option>
-                            <option value="sad">Sad</option>
-                            <option value="energetic">Energetic</option>
-                            <option value="calm">Calm</option>
-                            <option value="dark">Dark</option>
-                            <option value="romantic">Romantic</option>
-                        </select>
-                    </div>
-
-                    <!-- Tempo -->
-                    <div>
-                        <label for="tempo" class="block text-sm font-medium text-gray-300 mb-2">Tempo (BPM)</label>
-                        <input
-                            type="number"
-                            id="tempo"
-                            name="tempo"
-                            min="60"
-                            max="200"
-                            placeholder="Auto"
-                            class="w-full px-4 py-3 bg-dark-bg border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-                        />
-                    </div>
-                </div>
-            </details>
-
-            <!-- Generate Button -->
-            <div class="flex items-center space-x-4">
-                <button
-                    type="submit"
-                    class="flex-1 px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-dark-bg"
-                >
-                    <span class="flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                        Generate Music
-                    </span>
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <!-- Generation Progress Status -->
-    <div id="generation-status" class="hidden bg-dark-card rounded-xl border border-gray-700 p-8">
-        <div class="text-center space-y-4">
-            <div class="w-16 h-16 mx-auto">
-                <svg class="animate-spin text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        <!-- Features Preview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-dark-bg rounded-lg p-4 border border-gray-700">
+                <svg class="w-8 h-8 text-purple-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                 </svg>
+                <h4 class="text-white font-semibold mb-1">Prompt-based</h4>
+                <p class="text-gray-500 text-sm">Describe your music and let AI create it</p>
             </div>
-            <div>
-                <h3 class="text-xl font-bold text-white">Generating Music...</h3>
-                <p class="text-gray-400 mt-2">AI is creating your music. Please wait a moment.</p>
-            </div>
-            <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden">
-                <div class="bg-gradient-to-r from-purple-600 to-pink-600 h-full rounded-full animate-pulse" style="width: 70%"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Generation Complete -->
-    <div id="generation-result" class="hidden bg-dark-card rounded-xl border border-green-500 p-8">
-        <div class="text-center space-y-4">
-            <div class="w-16 h-16 mx-auto bg-green-600 bg-opacity-20 rounded-full flex items-center justify-center">
-                <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            <div class="bg-dark-bg rounded-lg p-4 border border-gray-700">
+                <svg class="w-8 h-8 text-purple-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
                 </svg>
+                <h4 class="text-white font-semibold mb-1">Genre & Mood</h4>
+                <p class="text-gray-500 text-sm">Choose from various genres and moods</p>
             </div>
-            <div>
-                <h3 class="text-xl font-bold text-white">Music Generated!</h3>
-                <p class="text-gray-400 mt-2">You can find it in your library.</p>
-            </div>
-            <div class="flex items-center justify-center space-x-4 mt-4">
-                <a href="{{ url_for('library') }}" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
-                    Go to Library
-                </a>
-                <button onclick="resetForm()" class="px-6 py-3 bg-dark-bg hover:bg-dark-hover text-white rounded-lg transition-colors">
-                    Create New
-                </button>
+            <div class="bg-dark-bg rounded-lg p-4 border border-gray-700">
+                <svg class="w-8 h-8 text-purple-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h4 class="text-white font-semibold mb-1">Custom Duration</h4>
+                <p class="text-gray-500 text-sm">Set your desired song length</p>
             </div>
         </div>
-    </div>
 
-    <!-- Example Prompts -->
-    <div class="bg-dark-card rounded-xl border border-gray-700 p-6">
-        <h3 class="text-lg font-bold text-white mb-4">Example Prompts</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <button onclick="setPrompt('Upbeat pop music with acoustic guitar and piano')" class="p-4 bg-dark-bg hover:bg-dark-hover rounded-lg text-left text-gray-300 hover:text-white transition-colors">
-                Upbeat pop music with acoustic guitar and piano
-            </button>
-            <button onclick="setPrompt('Emotional jazz with saxophone solo and piano accompaniment')" class="p-4 bg-dark-bg hover:bg-dark-hover rounded-lg text-left text-gray-300 hover:text-white transition-colors">
-                Emotional jazz with saxophone solo and piano accompaniment
-            </button>
-            <button onclick="setPrompt('Epic orchestral music, cinematic soundtrack feel')" class="p-4 bg-dark-bg hover:bg-dark-hover rounded-lg text-left text-gray-300 hover:text-white transition-colors">
-                Epic orchestral music, cinematic soundtrack feel
-            </button>
-            <button onclick="setPrompt('Energetic electronic dance music with bass drop and synthesizer')" class="p-4 bg-dark-bg hover:bg-dark-hover rounded-lg text-left text-gray-300 hover:text-white transition-colors">
-                Energetic electronic dance music with bass drop and synthesizer
-            </button>
-        </div>
+        <a href="{{ url_for('library') }}" class="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors">
+            Go to Library
+        </a>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    const durationSlider = document.getElementById('duration');
-    const durationValue = document.getElementById('duration-value');
-    const generateForm = document.getElementById('generate-form');
-    const generationStatus = document.getElementById('generation-status');
-    const generationResult = document.getElementById('generation-result');
-
-    // Update duration slider
-    durationSlider.addEventListener('input', function() {
-        durationValue.textContent = this.value + 's';
-    });
-
-    // Set example prompt
-    function setPrompt(text) {
-        document.getElementById('prompt').value = text;
-    }
-
-    // Reset form
-    function resetForm() {
-        generateForm.reset();
-        generationStatus.classList.add('hidden');
-        generationResult.classList.add('hidden');
-        durationValue.textContent = '30s';
-    }
-
-    // Music generation form submit
-    generateForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        const formData = {
-            prompt: document.getElementById('prompt').value,
-            duration: parseInt(document.getElementById('duration').value),
-            genre: document.getElementById('genre').value,
-            mood: document.getElementById('mood').value,
-            tempo: document.getElementById('tempo').value ? parseInt(document.getElementById('tempo').value) : null
-        };
-
-        // Show generating status
-        generationStatus.classList.remove('hidden');
-        generationResult.classList.add('hidden');
-
-        try {
-            const response = await fetch('/api/generate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-
-            const result = await response.json();
-
-            // Simulation: Show complete after 3 seconds
-            setTimeout(() => {
-                generationStatus.classList.add('hidden');
-                generationResult.classList.remove('hidden');
-            }, 3000);
-
-        } catch (error) {
-            console.error('Generation failed:', error);
-            alert('Music generation failed. Please try again.');
-            generationStatus.classList.add('hidden');
-        }
-    });
-</script>
 {% endblock %}

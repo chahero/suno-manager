@@ -8,7 +8,7 @@ A modern web application for AI music generation and management using SUNO AI.
 
 - **Authentication**: Login using SUNO Bearer token (JWT)
 - **Dashboard**: View generated music statistics and recent songs
-- **Music Generation**: Generate music using AI prompts
+- **Music Generation**: Generate music using AI prompts *(Coming Soon)*
 - **Music Library**: Manage, play, download, and delete generated music
 - **Global Audio Player**: Bottom-fixed player with equalizer animation
 - **Lyrics View**: Display song lyrics/prompt in popup
@@ -113,7 +113,9 @@ Open `http://localhost:5000` in your browser
 - Batch Download: Select multiple songs and download as ZIP file
 - Batch Delete: Select and delete multiple songs at once
 
-### Music Generation
+### Music Generation *(Coming Soon)*
+
+> This feature is currently under development.
 
 - Generate music by entering prompts
 - Set advanced options like genre, mood, tempo
