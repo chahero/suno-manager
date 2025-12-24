@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" class="dark">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,12 +26,12 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
 
-        /* 플레이어가 표시될 때 메인 컨텐츠 하단 여백 */
+        /* Bottom padding for main content when player is visible */
         .player-active main {
             padding-bottom: 96px;
         }
 
-        /* 이퀄라이저 애니메이션 */
+        /* Equalizer animation */
         @keyframes equalize {
             0%, 100% { height: 4px; }
             50% { height: 16px; }
@@ -48,7 +48,7 @@
         .equalizer-bar:nth-child(2) { animation-delay: 0.2s; }
         .equalizer-bar:nth-child(3) { animation-delay: 0.4s; }
 
-        /* 진행바 커스텀 */
+        /* Custom progress bar */
         input[type="range"]::-webkit-slider-thumb {
             appearance: none;
             width: 12px;
@@ -70,7 +70,7 @@
 </head>
 <body class="bg-dark-bg text-gray-100">
     <div class="flex h-screen overflow-hidden">
-        <!-- 왼쪽 네비게이션 -->
+        <!-- Left Navigation -->
         <aside class="w-64 bg-dark-card border-r border-gray-700 flex flex-col">
             <div class="p-6 border-b border-gray-700">
                 <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
@@ -85,7 +85,7 @@
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
-                    대시보드
+                    Dashboard
                 </a>
 
                 <a href="{{ url_for('generate') }}"
@@ -93,7 +93,7 @@
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
                     </svg>
-                    음악 생성
+                    Generate Music
                 </a>
 
                 <a href="{{ url_for('library') }}"
@@ -101,15 +101,15 @@
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                     </svg>
-                    음악 라이브러리
+                    Music Library
                 </a>
             </nav>
 
             <div class="p-4 border-t border-gray-700 space-y-2">
-                <!-- 크레딧 정보 -->
+                <!-- Credits Info -->
                 <div id="credits-info" class="px-4 py-3 bg-dark-bg rounded-lg border border-gray-700">
                     <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs text-gray-500 uppercase">크레딧</span>
+                        <span class="text-xs text-gray-500 uppercase">Credits</span>
                         <span class="text-xs text-purple-400" id="plan-name">-</span>
                     </div>
                     <div class="flex items-baseline space-x-1 mb-2">
@@ -126,18 +126,18 @@
 
                 <div class="flex items-center px-4 py-3 bg-dark-bg rounded-lg">
                     <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                    <span class="text-sm text-gray-400">API 연결됨</span>
+                    <span class="text-sm text-gray-400">API Connected</span>
                 </div>
                 <a href="{{ url_for('logout') }}" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-dark-hover rounded-lg transition-colors">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>
-                    로그아웃
+                    Logout
                 </a>
             </div>
         </aside>
 
-        <!-- 메인 컨텐츠 -->
+        <!-- Main Content -->
         <main class="flex-1 overflow-y-auto">
             <div class="p-8">
                 {% block content %}{% endblock %}
@@ -145,29 +145,29 @@
         </main>
     </div>
 
-    <!-- 하단 고정 플레이어 -->
+    <!-- Bottom Fixed Player -->
     <div id="bottom-player" class="hidden fixed bottom-0 left-0 right-0 bg-dark-card border-t border-gray-700 z-40">
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between gap-4">
-                <!-- 왼쪽: 곡 정보 -->
+                <!-- Left: Song Info -->
                 <div class="flex items-center space-x-4 flex-1 min-w-0">
                     <img id="player-cover" src="" alt="Album Cover" class="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
                     <div class="min-w-0 flex-1">
-                        <h4 id="player-title" class="text-white font-semibold truncate">곡 제목</h4>
-                        <p id="player-tags" class="text-gray-400 text-sm truncate">태그</p>
+                        <h4 id="player-title" class="text-white font-semibold truncate">Song Title</h4>
+                        <p id="player-tags" class="text-gray-400 text-sm truncate">Tags</p>
                     </div>
                 </div>
 
-                <!-- 중앙: 컨트롤 -->
+                <!-- Center: Controls -->
                 <div class="flex flex-col items-center flex-1 max-w-2xl">
                     <div class="flex items-center space-x-4 mb-2">
-                        <button onclick="globalPlayer.previous()" class="p-2 text-gray-400 hover:text-white transition-colors" title="이전 곡">
+                        <button onclick="globalPlayer.previous()" class="p-2 text-gray-400 hover:text-white transition-colors" title="Previous">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
                             </svg>
                         </button>
 
-                        <button id="player-play-btn" onclick="globalPlayer.togglePlay()" class="p-3 bg-purple-600 hover:bg-purple-700 rounded-full transition-colors" title="재생/일시정지">
+                        <button id="player-play-btn" onclick="globalPlayer.togglePlay()" class="p-3 bg-purple-600 hover:bg-purple-700 rounded-full transition-colors" title="Play/Pause">
                             <svg id="player-play-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z"/>
                             </svg>
@@ -176,14 +176,14 @@
                             </svg>
                         </button>
 
-                        <button onclick="globalPlayer.next()" class="p-2 text-gray-400 hover:text-white transition-colors" title="다음 곡">
+                        <button onclick="globalPlayer.next()" class="p-2 text-gray-400 hover:text-white transition-colors" title="Next">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M16 18h2V6h-2zm-11-7l8.5 6V5z"/>
                             </svg>
                         </button>
                     </div>
 
-                    <!-- 진행바 -->
+                    <!-- Progress Bar -->
                     <div class="w-full flex items-center space-x-2">
                         <span id="player-current-time" class="text-xs text-gray-400 w-10">0:00</span>
                         <input
@@ -199,10 +199,10 @@
                     </div>
                 </div>
 
-                <!-- 오른쪽: 가사 + 볼륨 -->
+                <!-- Right: Lyrics + Volume -->
                 <div class="flex items-center space-x-3 flex-1 justify-end">
-                    <!-- 가사 버튼 -->
-                    <button onclick="globalPlayer.showLyrics()" class="p-2 text-gray-400 hover:text-white transition-colors" title="가사 보기">
+                    <!-- Lyrics Button -->
+                    <button onclick="globalPlayer.showLyrics()" class="p-2 text-gray-400 hover:text-white transition-colors" title="View Lyrics">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
@@ -224,15 +224,15 @@
             </div>
         </div>
 
-        <!-- 숨겨진 오디오 엘리먼트 -->
+        <!-- Hidden Audio Element -->
         <audio id="global-audio" preload="metadata"></audio>
     </div>
 
-    <!-- 가사 모달 -->
+    <!-- Lyrics Modal -->
     <div id="player-lyrics-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onclick="globalPlayer.closeLyrics(event)">
         <div class="bg-dark-card rounded-xl border border-gray-700 p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onclick="event.stopPropagation()">
             <div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl font-bold text-white" id="player-lyrics-title">가사</h3>
+                <h3 class="text-2xl font-bold text-white" id="player-lyrics-title">Lyrics</h3>
                 <button onclick="globalPlayer.closeLyrics()" class="p-2 hover:bg-dark-hover rounded-lg transition-colors">
                     <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -245,7 +245,7 @@
         </div>
     </div>
 
-    <!-- 전역 플레이어 스크립트 -->
+    <!-- Global Player Script -->
     <script>
         const globalPlayer = {
             audio: null,
@@ -258,14 +258,14 @@
             init() {
                 this.audio = document.getElementById('global-audio');
 
-                // 오디오 이벤트 리스너
+                // Audio event listeners
                 this.audio.addEventListener('loadedmetadata', () => this.updateDuration());
                 this.audio.addEventListener('timeupdate', () => this.updateProgress());
                 this.audio.addEventListener('ended', () => this.next());
                 this.audio.addEventListener('play', () => this.updatePlayButton(true));
                 this.audio.addEventListener('pause', () => this.updatePlayButton(false));
 
-                // 초기 볼륨 설정
+                // Initial volume setting
                 this.audio.volume = 0.7;
             },
 
@@ -276,16 +276,16 @@
                 this.audio.src = audioUrl;
                 this.audio.play();
 
-                // UI 업데이트
+                // Update UI
                 document.getElementById('player-title').textContent = this.currentTitle;
                 document.getElementById('player-tags').textContent = tags || 'No tags';
                 document.getElementById('player-cover').src = cover || '/static/default-cover.png';
 
-                // 플레이어 표시
+                // Show player
                 document.getElementById('bottom-player').classList.remove('hidden');
                 document.body.classList.add('player-active');
 
-                // 라이브러리 페이지의 재생 중 표시 업데이트
+                // Update now playing indicator on library page
                 if (typeof updateNowPlaying === 'function') {
                     updateNowPlaying(songId);
                 }
@@ -309,13 +309,13 @@
             },
 
             next() {
-                // 플레이리스트 기능은 나중에 구현
-                console.log('다음 곡');
+                // Playlist feature to be implemented later
+                console.log('Next song');
             },
 
             previous() {
-                // 플레이리스트 기능은 나중에 구현
-                console.log('이전 곡');
+                // Playlist feature to be implemented later
+                console.log('Previous song');
             },
 
             updateProgress() {
@@ -352,7 +352,7 @@
 
             showLyrics() {
                 if (!this.currentLyrics) {
-                    alert('가사 정보가 없습니다.');
+                    alert('No lyrics available.');
                     return;
                 }
 
@@ -362,19 +362,19 @@
             },
 
             closeLyrics(event) {
-                // event가 있고, 배경을 클릭한 경우가 아니면 무시
+                // Ignore if event exists and not clicking on background
                 if (event && event.target.id !== 'player-lyrics-modal') return;
                 document.getElementById('player-lyrics-modal').classList.add('hidden');
             }
         };
 
-        // 페이지 로드 시 플레이어 초기화
+        // Initialize player on page load
         document.addEventListener('DOMContentLoaded', () => {
             globalPlayer.init();
             loadCreditsInfo();
         });
 
-        // 크레딧 정보 로드
+        // Load credits info
         async function loadCreditsInfo() {
             try {
                 const response = await fetch('/api/billing/info');
@@ -382,30 +382,30 @@
 
                 const data = await response.json();
 
-                // 크레딧 숫자 업데이트
+                // Update credits number
                 document.getElementById('credits-count').textContent = data.credits.toLocaleString();
                 document.getElementById('credits-limit').textContent = data.monthly_limit.toLocaleString();
                 document.getElementById('plan-name').textContent = data.plan_name;
 
-                // 진행바 업데이트
+                // Update progress bar
                 const percentage = data.monthly_limit > 0 ? (data.credits / data.monthly_limit) * 100 : 0;
                 document.getElementById('credits-bar').style.width = `${percentage}%`;
 
-                // 갱신 날짜 포맷
+                // Format renewal date
                 if (data.renews_on) {
                     const renewDate = new Date(data.renews_on);
-                    const formatted = renewDate.toLocaleDateString('ko-KR', {
+                    const formatted = renewDate.toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric'
                     });
-                    document.getElementById('renews-text').textContent = `${formatted} 갱신`;
+                    document.getElementById('renews-text').textContent = `Renews ${formatted}`;
                 }
             } catch (error) {
-                console.error('크레딧 정보 로드 실패:', error);
+                console.error('Failed to load credits info:', error);
             }
         }
 
-        // 5분마다 크레딧 정보 자동 갱신
+        // Auto-refresh credits info every 5 minutes
         setInterval(loadCreditsInfo, 5 * 60 * 1000);
     </script>
 

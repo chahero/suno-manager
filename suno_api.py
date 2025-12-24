@@ -6,15 +6,15 @@ from typing import Optional, List, Dict
 class SunoAPI:
     def __init__(self, bearer_token: Optional[str] = None):
         """
-        SUNO API 클라이언트
+        SUNO API Client
 
         Args:
-            bearer_token: SUNO Bearer 토큰 (JWT)
+            bearer_token: SUNO Bearer token (JWT)
         """
         self.bearer_token = bearer_token or os.getenv('SUNO_BEARER_TOKEN')
         self.base_url = 'https://studio-api.prod.suno.com/api'
 
-        # 디바이스 ID 생성 또는 환경 변수에서 가져오기
+        # Generate device ID or get from environment variable
         self.device_id = os.getenv('SUNO_DEVICE_ID', str(uuid.uuid4()))
 
         self.session = requests.Session()
@@ -29,13 +29,13 @@ class SunoAPI:
 
     def get_songs(self, page: int = 0) -> Dict:
         """
-        생성된 음악 목록 조회
+        Get generated music list
 
         Args:
-            page: 페이지 번호 (0부터 시작)
+            page: Page number (starts from 0)
 
         Returns:
-            음악 목록 및 메타데이터
+            Music list and metadata
         """
         endpoint = f'{self.base_url}/feed/v2'
         params = {
@@ -62,13 +62,13 @@ class SunoAPI:
 
     def get_all_songs(self, max_pages: int = 10) -> List[Dict]:
         """
-        모든 음악 목록 조회 (페이지네이션)
+        Get all music list (with pagination)
 
         Args:
-            max_pages: 최대 페이지 수
+            max_pages: Maximum number of pages
 
         Returns:
-            모든 음악 목록
+            All music list
         """
         all_clips = []
         page = 0
@@ -91,15 +91,15 @@ class SunoAPI:
 
     def get_song(self, song_id: str) -> Optional[Dict]:
         """
-        특정 음악 정보 조회
+        Get specific music info
 
         Args:
-            song_id: 음악 ID
+            song_id: Music ID
 
         Returns:
-            음악 정보
+            Music info
         """
-        # feed에서 특정 곡 찾기
+        # Find specific song from feed
         songs = self.get_all_songs()
         for song in songs:
             if song.get('id') == song_id:
@@ -108,15 +108,15 @@ class SunoAPI:
 
     def generate_music(self, prompt: str, tags: str = "", **kwargs) -> Dict:
         """
-        음악 생성 요청 (SUNO v2 API)
+        Request music generation (SUNO v2 API)
 
         Args:
-            prompt: 가사/프롬프트
-            tags: 음악 스타일/장르 태그
-            **kwargs: 추가 파라미터
+            prompt: Lyrics/prompt
+            tags: Music style/genre tags
+            **kwargs: Additional parameters
 
         Returns:
-            생성 작업 정보
+            Generation task info
         """
         endpoint = f'{self.base_url}/generate/v2/'
         payload = {
@@ -138,15 +138,15 @@ class SunoAPI:
 
     def delete_song(self, song_id: str) -> bool:
         """
-        음악 삭제
+        Delete music
 
         Args:
-            song_id: 삭제할 음악 ID
+            song_id: Music ID to delete
 
         Returns:
-            성공 여부
+            Success status
         """
-        # SUNO API의 삭제 엔드포인트
+        # SUNO API delete endpoint
         endpoint = f'{self.base_url}/clip/{song_id}'
 
         try:
@@ -161,14 +161,14 @@ class SunoAPI:
 
     def download_song(self, song_id: str, output_path: str) -> bool:
         """
-        음악 다운로드
+        Download music
 
         Args:
-            song_id: 다운로드할 음악 ID
-            output_path: 저장 경로
+            song_id: Music ID to download
+            output_path: Save path
 
         Returns:
-            성공 여부
+            Success status
         """
         song_info = self.get_song(song_id)
         if not song_info:
@@ -192,10 +192,10 @@ class SunoAPI:
 
     def is_authenticated(self) -> bool:
         """
-        인증 상태 확인
+        Check authentication status
 
         Returns:
-            인증 여부
+            Authentication status
         """
         try:
             result = self.get_songs(page=0)
@@ -205,10 +205,10 @@ class SunoAPI:
 
     def get_billing_info(self) -> Dict:
         """
-        크레딧 및 구독 정보 조회
+        Get credits and subscription info
 
         Returns:
-            크레딧, 플랜, 구독 정보
+            Credits, plan, subscription info
         """
         endpoint = f'{self.base_url}/billing/info/'
 

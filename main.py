@@ -13,13 +13,13 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
 def get_suno_client():
-    """세션에서 SUNO Bearer 토큰을 가져와 클라이언트 생성"""
+    """Get SUNO Bearer token from session and create client"""
     token = session.get('suno_token') or os.getenv('SUNO_BEARER_TOKEN')
     return SunoAPI(bearer_token=token)
 
 @app.route('/')
 def index():
-    # 인증 확인
+    # Check authentication
     client = get_suno_client()
     if not client.is_authenticated():
         return redirect(url_for('login'))
@@ -32,7 +32,7 @@ def login():
         token = data.get('token')
 
         if token:
-            # 토큰 유효성 검사
+            # Validate token
             client = SunoAPI(bearer_token=token)
             if client.is_authenticated():
                 session['suno_token'] = token
@@ -67,14 +67,14 @@ def library():
 
 @app.route('/api/auth/check')
 def api_auth_check():
-    """인증 상태 확인"""
+    """Check authentication status"""
     client = get_suno_client()
     is_auth = client.is_authenticated()
     return jsonify({'authenticated': is_auth})
 
 @app.route('/api/billing/info')
 def api_billing_info():
-    """크레딧 및 구독 정보 조회"""
+    """Get credits and subscription info"""
     try:
         client = get_suno_client()
         if not client.is_authenticated():
@@ -82,7 +82,7 @@ def api_billing_info():
 
         billing_info = client.get_billing_info()
 
-        # 필요한 정보만 추출
+        # Extract required information only
         return jsonify({
             'credits': billing_info.get('total_credits_left', 0),
             'monthly_limit': billing_info.get('monthly_limit', 0),
@@ -96,7 +96,7 @@ def api_billing_info():
 
 @app.route('/api/generate', methods=['POST'])
 def api_generate():
-    """음악 생성 API 엔드포인트"""
+    """Music generation API endpoint"""
     try:
         client = get_suno_client()
         if not client.is_authenticated():
@@ -104,11 +104,11 @@ def api_generate():
 
         data = request.json
 
-        # 필수 파라미터 확인
+        # Check required parameters
         if not data.get('prompt'):
             return jsonify({'error': 'Prompt is required'}), 400
 
-        # 태그 생성 (genre + mood)
+        # Generate tags (genre + mood)
         tags_parts = []
         if data.get('genre'):
             tags_parts.append(data['genre'])
@@ -116,7 +116,7 @@ def api_generate():
             tags_parts.append(data['mood'])
         tags = ', '.join(tags_parts) if tags_parts else ''
 
-        # SUNO API로 음악 생성 요청
+        # Request music generation via SUNO API
         result = client.generate_music(
             prompt=data['prompt'],
             tags=tags,
@@ -137,7 +137,7 @@ def api_generate():
 
 @app.route('/api/songs', methods=['GET'])
 def api_songs():
-    """생성된 곡 목록 조회 API"""
+    """Get generated songs list API"""
     try:
         client = get_suno_client()
         if not client.is_authenticated():
@@ -147,7 +147,7 @@ def api_songs():
 
         result = client.get_songs(page=page)
 
-        # 응답 구조 그대로 반환
+        # Return response structure as is
         return jsonify({
             'status': 'success',
             'clips': result.get('clips', []),
@@ -161,7 +161,7 @@ def api_songs():
 
 @app.route('/api/songs/<song_id>', methods=['GET'])
 def api_get_song(song_id):
-    """특정 곡 정보 조회 API"""
+    """Get specific song info API"""
     try:
         client = get_suno_client()
         if not client.is_authenticated():
@@ -182,7 +182,7 @@ def api_get_song(song_id):
 
 @app.route('/api/songs/<song_id>', methods=['DELETE'])
 def api_delete_song(song_id):
-    """곡 삭제 API"""
+    """Delete song API"""
     try:
         client = get_suno_client()
         if not client.is_authenticated():
@@ -203,13 +203,13 @@ def api_delete_song(song_id):
 
 @app.route('/api/songs/<song_id>/download', methods=['GET'])
 def api_download_song(song_id):
-    """곡 다운로드 API"""
+    """Download song API"""
     try:
         client = get_suno_client()
         if not client.is_authenticated():
             return jsonify({'error': 'Not authenticated'}), 401
 
-        # 환경 변수에서 다운로드 폴더 경로 가져오기 (기본값: downloads)
+        # Get download folder path from environment variable (default: downloads)
         output_dir = os.getenv('DOWNLOAD_FOLDER', 'downloads')
         os.makedirs(output_dir, exist_ok=True)
 
@@ -227,7 +227,7 @@ def api_download_song(song_id):
 
 @app.route('/api/songs/batch-download', methods=['POST'])
 def api_batch_download():
-    """여러 곡을 ZIP 파일로 일괄 다운로드 API"""
+    """Batch download multiple songs as ZIP file API"""
     try:
         client = get_suno_client()
         if not client.is_authenticated():
@@ -239,36 +239,36 @@ def api_batch_download():
         if not song_ids:
             return jsonify({'error': 'No songs selected'}), 400
 
-        # 메모리에 ZIP 파일 생성
+        # Create ZIP file in memory
         memory_zip = BytesIO()
 
-        # 임시 디렉토리 생성
+        # Create temporary directory
         with tempfile.TemporaryDirectory() as temp_dir:
-            # 각 곡 다운로드
+            # Download each song
             downloaded_files = []
             for song_id in song_ids:
                 song = client.get_song(song_id)
                 if not song:
                     continue
 
-                # 파일명 생성 (제목 + ID)
+                # Generate filename (title + ID)
                 title = song.get('title', 'Untitled').replace('/', '-').replace('\\', '-')
                 filename = f"{title}_{song_id}.mp3"
                 filepath = os.path.join(temp_dir, filename)
 
-                # 다운로드
+                # Download
                 if client.download_song(song_id, filepath):
                     downloaded_files.append((filepath, filename))
 
             if not downloaded_files:
                 return jsonify({'error': 'Failed to download any songs'}), 500
 
-            # ZIP 파일 생성 (메모리에)
+            # Create ZIP file (in memory)
             with zipfile.ZipFile(memory_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 for filepath, filename in downloaded_files:
                     zipf.write(filepath, filename)
 
-        # ZIP 파일 전송 준비
+        # Prepare ZIP file for sending
         memory_zip.seek(0)
         date_str = datetime.now().strftime('%Y-%m-%d')
         zip_filename = f'suno-songs-{date_str}.zip'

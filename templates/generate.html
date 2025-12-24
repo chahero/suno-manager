@@ -1,38 +1,38 @@
 {% extends "base.html" %}
 
-{% block title %}음악 생성 - SUNO Manager{% endblock %}
+{% block title %}Generate Music - SUNO Manager{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-6">
-    <!-- 헤더 -->
+    <!-- Header -->
     <div>
-        <h2 class="text-3xl font-bold text-white">AI 음악 생성</h2>
-        <p class="text-gray-400 mt-2">프롬프트를 입력하여 독창적인 음악을 만들어보세요</p>
+        <h2 class="text-3xl font-bold text-white">AI Music Generation</h2>
+        <p class="text-gray-400 mt-2">Enter a prompt to create original music</p>
     </div>
 
-    <!-- 음악 생성 폼 -->
+    <!-- Music Generation Form -->
     <div class="bg-dark-card rounded-xl border border-gray-700 p-8">
         <form id="generate-form" class="space-y-6">
-            <!-- 프롬프트 입력 -->
+            <!-- Prompt Input -->
             <div>
                 <label for="prompt" class="block text-sm font-medium text-gray-300 mb-2">
-                    음악 설명 프롬프트
+                    Music Description Prompt
                 </label>
                 <textarea
                     id="prompt"
                     name="prompt"
                     rows="4"
                     class="w-full px-4 py-3 bg-dark-bg border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all"
-                    placeholder="예: 밝고 경쾌한 팝 음악, 어쿠스틱 기타와 피아노 사운드"
+                    placeholder="e.g., Upbeat pop music with acoustic guitar and piano"
                     required
                 ></textarea>
-                <p class="text-sm text-gray-500 mt-2">원하는 음악의 장르, 분위기, 악기 등을 자세히 설명해주세요</p>
+                <p class="text-sm text-gray-500 mt-2">Describe the genre, mood, instruments, etc. of the music you want</p>
             </div>
 
-            <!-- 음악 길이 -->
+            <!-- Music Duration -->
             <div>
                 <label for="duration" class="block text-sm font-medium text-gray-300 mb-2">
-                    음악 길이 (초)
+                    Duration (seconds)
                 </label>
                 <div class="flex items-center space-x-4">
                     <input
@@ -44,24 +44,24 @@
                         value="30"
                         class="flex-1 h-2 bg-dark-bg rounded-lg appearance-none cursor-pointer accent-purple-600"
                     />
-                    <span id="duration-value" class="text-white font-semibold w-16 text-right">30초</span>
+                    <span id="duration-value" class="text-white font-semibold w-16 text-right">30s</span>
                 </div>
             </div>
 
-            <!-- 고급 옵션 -->
+            <!-- Advanced Options -->
             <details class="group">
                 <summary class="cursor-pointer text-purple-400 hover:text-purple-300 transition-colors flex items-center space-x-2">
                     <svg class="w-5 h-5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
-                    <span>고급 옵션</span>
+                    <span>Advanced Options</span>
                 </summary>
                 <div class="mt-4 space-y-4 pl-7">
-                    <!-- 장르 -->
+                    <!-- Genre -->
                     <div>
-                        <label for="genre" class="block text-sm font-medium text-gray-300 mb-2">장르</label>
+                        <label for="genre" class="block text-sm font-medium text-gray-300 mb-2">Genre</label>
                         <select id="genre" name="genre" class="w-full px-4 py-3 bg-dark-bg border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500">
-                            <option value="">자동</option>
+                            <option value="">Auto</option>
                             <option value="pop">Pop</option>
                             <option value="rock">Rock</option>
                             <option value="jazz">Jazz</option>
@@ -73,37 +73,37 @@
                         </select>
                     </div>
 
-                    <!-- 분위기 -->
+                    <!-- Mood -->
                     <div>
-                        <label for="mood" class="block text-sm font-medium text-gray-300 mb-2">분위기</label>
+                        <label for="mood" class="block text-sm font-medium text-gray-300 mb-2">Mood</label>
                         <select id="mood" name="mood" class="w-full px-4 py-3 bg-dark-bg border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500">
-                            <option value="">자동</option>
-                            <option value="happy">행복한</option>
-                            <option value="sad">슬픈</option>
-                            <option value="energetic">활기찬</option>
-                            <option value="calm">차분한</option>
-                            <option value="dark">어두운</option>
-                            <option value="romantic">로맨틱한</option>
+                            <option value="">Auto</option>
+                            <option value="happy">Happy</option>
+                            <option value="sad">Sad</option>
+                            <option value="energetic">Energetic</option>
+                            <option value="calm">Calm</option>
+                            <option value="dark">Dark</option>
+                            <option value="romantic">Romantic</option>
                         </select>
                     </div>
 
-                    <!-- 템포 -->
+                    <!-- Tempo -->
                     <div>
-                        <label for="tempo" class="block text-sm font-medium text-gray-300 mb-2">템포 (BPM)</label>
+                        <label for="tempo" class="block text-sm font-medium text-gray-300 mb-2">Tempo (BPM)</label>
                         <input
                             type="number"
                             id="tempo"
                             name="tempo"
                             min="60"
                             max="200"
-                            placeholder="자동"
+                            placeholder="Auto"
                             class="w-full px-4 py-3 bg-dark-bg border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
                         />
                     </div>
                 </div>
             </details>
 
-            <!-- 생성 버튼 -->
+            <!-- Generate Button -->
             <div class="flex items-center space-x-4">
                 <button
                     type="submit"
@@ -113,14 +113,14 @@
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                         </svg>
-                        음악 생성하기
+                        Generate Music
                     </span>
                 </button>
             </div>
         </form>
     </div>
 
-    <!-- 생성 진행 상태 -->
+    <!-- Generation Progress Status -->
     <div id="generation-status" class="hidden bg-dark-card rounded-xl border border-gray-700 p-8">
         <div class="text-center space-y-4">
             <div class="w-16 h-16 mx-auto">
@@ -129,8 +129,8 @@
                 </svg>
             </div>
             <div>
-                <h3 class="text-xl font-bold text-white">음악 생성 중...</h3>
-                <p class="text-gray-400 mt-2">AI가 당신의 음악을 만들고 있습니다. 잠시만 기다려주세요.</p>
+                <h3 class="text-xl font-bold text-white">Generating Music...</h3>
+                <p class="text-gray-400 mt-2">AI is creating your music. Please wait a moment.</p>
             </div>
             <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden">
                 <div class="bg-gradient-to-r from-purple-600 to-pink-600 h-full rounded-full animate-pulse" style="width: 70%"></div>
@@ -138,7 +138,7 @@
         </div>
     </div>
 
-    <!-- 생성 완료 -->
+    <!-- Generation Complete -->
     <div id="generation-result" class="hidden bg-dark-card rounded-xl border border-green-500 p-8">
         <div class="text-center space-y-4">
             <div class="w-16 h-16 mx-auto bg-green-600 bg-opacity-20 rounded-full flex items-center justify-center">
@@ -147,35 +147,35 @@
                 </svg>
             </div>
             <div>
-                <h3 class="text-xl font-bold text-white">음악이 생성되었습니다!</h3>
-                <p class="text-gray-400 mt-2">라이브러리에서 확인하실 수 있습니다.</p>
+                <h3 class="text-xl font-bold text-white">Music Generated!</h3>
+                <p class="text-gray-400 mt-2">You can find it in your library.</p>
             </div>
             <div class="flex items-center justify-center space-x-4 mt-4">
                 <a href="{{ url_for('library') }}" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
-                    라이브러리로 이동
+                    Go to Library
                 </a>
                 <button onclick="resetForm()" class="px-6 py-3 bg-dark-bg hover:bg-dark-hover text-white rounded-lg transition-colors">
-                    새로 생성하기
+                    Create New
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- 예제 프롬프트 -->
+    <!-- Example Prompts -->
     <div class="bg-dark-card rounded-xl border border-gray-700 p-6">
-        <h3 class="text-lg font-bold text-white mb-4">예제 프롬프트</h3>
+        <h3 class="text-lg font-bold text-white mb-4">Example Prompts</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <button onclick="setPrompt(this.textContent)" class="p-4 bg-dark-bg hover:bg-dark-hover rounded-lg text-left text-gray-300 hover:text-white transition-colors">
-                밝고 경쾌한 팝 음악, 어쿠스틱 기타와 피아노 사운드
+            <button onclick="setPrompt('Upbeat pop music with acoustic guitar and piano')" class="p-4 bg-dark-bg hover:bg-dark-hover rounded-lg text-left text-gray-300 hover:text-white transition-colors">
+                Upbeat pop music with acoustic guitar and piano
             </button>
-            <button onclick="setPrompt(this.textContent)" class="p-4 bg-dark-bg hover:bg-dark-hover rounded-lg text-left text-gray-300 hover:text-white transition-colors">
-                감성적인 재즈, 색소폰 솔로와 피아노 반주
+            <button onclick="setPrompt('Emotional jazz with saxophone solo and piano accompaniment')" class="p-4 bg-dark-bg hover:bg-dark-hover rounded-lg text-left text-gray-300 hover:text-white transition-colors">
+                Emotional jazz with saxophone solo and piano accompaniment
             </button>
-            <button onclick="setPrompt(this.textContent)" class="p-4 bg-dark-bg hover:bg-dark-hover rounded-lg text-left text-gray-300 hover:text-white transition-colors">
-                웅장한 오케스트라 음악, 영화 사운드트랙 느낌
+            <button onclick="setPrompt('Epic orchestral music, cinematic soundtrack feel')" class="p-4 bg-dark-bg hover:bg-dark-hover rounded-lg text-left text-gray-300 hover:text-white transition-colors">
+                Epic orchestral music, cinematic soundtrack feel
             </button>
-            <button onclick="setPrompt(this.textContent)" class="p-4 bg-dark-bg hover:bg-dark-hover rounded-lg text-left text-gray-300 hover:text-white transition-colors">
-                신나는 일렉트로닉 댄스 뮤직, 베이스 드롭과 신디사이저
+            <button onclick="setPrompt('Energetic electronic dance music with bass drop and synthesizer')" class="p-4 bg-dark-bg hover:bg-dark-hover rounded-lg text-left text-gray-300 hover:text-white transition-colors">
+                Energetic electronic dance music with bass drop and synthesizer
             </button>
         </div>
     </div>
@@ -190,25 +190,25 @@
     const generationStatus = document.getElementById('generation-status');
     const generationResult = document.getElementById('generation-result');
 
-    // 음악 길이 슬라이더 업데이트
+    // Update duration slider
     durationSlider.addEventListener('input', function() {
-        durationValue.textContent = this.value + '초';
+        durationValue.textContent = this.value + 's';
     });
 
-    // 예제 프롬프트 설정
+    // Set example prompt
     function setPrompt(text) {
         document.getElementById('prompt').value = text;
     }
 
-    // 폼 리셋
+    // Reset form
     function resetForm() {
         generateForm.reset();
         generationStatus.classList.add('hidden');
         generationResult.classList.add('hidden');
-        durationValue.textContent = '30초';
+        durationValue.textContent = '30s';
     }
 
-    // 음악 생성 폼 제출
+    // Music generation form submit
     generateForm.addEventListener('submit', async function(e) {
         e.preventDefault();
 
@@ -220,7 +220,7 @@
             tempo: document.getElementById('tempo').value ? parseInt(document.getElementById('tempo').value) : null
         };
 
-        // 생성 중 표시
+        // Show generating status
         generationStatus.classList.remove('hidden');
         generationResult.classList.add('hidden');
 
@@ -235,15 +235,15 @@
 
             const result = await response.json();
 
-            // 시뮬레이션: 3초 후 완료 표시
+            // Simulation: Show complete after 3 seconds
             setTimeout(() => {
                 generationStatus.classList.add('hidden');
                 generationResult.classList.remove('hidden');
             }, 3000);
 
         } catch (error) {
-            console.error('생성 실패:', error);
-            alert('음악 생성에 실패했습니다. 다시 시도해주세요.');
+            console.error('Generation failed:', error);
+            alert('Music generation failed. Please try again.');
             generationStatus.classList.add('hidden');
         }
     });

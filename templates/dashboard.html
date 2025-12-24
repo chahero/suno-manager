@@ -1,21 +1,21 @@
 {% extends "base.html" %}
 
-{% block title %}대시보드 - SUNO Manager{% endblock %}
+{% block title %}Dashboard - SUNO Manager{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
-    <!-- 헤더 -->
+    <!-- Header -->
     <div>
-        <h2 class="text-3xl font-bold text-white">대시보드</h2>
-        <p class="text-gray-400 mt-2">SUNO AI 음악 생성 현황을 확인하세요</p>
+        <h2 class="text-3xl font-bold text-white">Dashboard</h2>
+        <p class="text-gray-400 mt-2">Check your SUNO AI music generation status</p>
     </div>
 
-    <!-- 통계 카드 -->
+    <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="bg-dark-card rounded-xl p-6 border border-gray-700 hover:border-purple-500 transition-colors">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-gray-400 text-sm">전체 곡 수</p>
+                    <p class="text-gray-400 text-sm">Total Songs</p>
                     <h3 class="text-3xl font-bold text-white mt-2" id="total-songs">0</h3>
                 </div>
                 <div class="w-12 h-12 bg-purple-600 bg-opacity-20 rounded-lg flex items-center justify-center">
@@ -29,7 +29,7 @@
         <div class="bg-dark-card rounded-xl p-6 border border-gray-700 hover:border-blue-500 transition-colors">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-gray-400 text-sm">생성 중</p>
+                    <p class="text-gray-400 text-sm">Generating</p>
                     <h3 class="text-3xl font-bold text-white mt-2" id="generating-songs">0</h3>
                 </div>
                 <div class="w-12 h-12 bg-blue-600 bg-opacity-20 rounded-lg flex items-center justify-center">
@@ -43,7 +43,7 @@
         <div class="bg-dark-card rounded-xl p-6 border border-gray-700 hover:border-green-500 transition-colors">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-gray-400 text-sm">오늘 생성</p>
+                    <p class="text-gray-400 text-sm">Created Today</p>
                     <h3 class="text-3xl font-bold text-white mt-2" id="today-songs">0</h3>
                 </div>
                 <div class="w-12 h-12 bg-green-600 bg-opacity-20 rounded-lg flex items-center justify-center">
@@ -57,7 +57,7 @@
         <div class="bg-dark-card rounded-xl p-6 border border-gray-700 hover:border-pink-500 transition-colors">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-gray-400 text-sm">저장 공간</p>
+                    <p class="text-gray-400 text-sm">Storage Used</p>
                     <h3 class="text-3xl font-bold text-white mt-2">2.4GB</h3>
                 </div>
                 <div class="w-12 h-12 bg-pink-600 bg-opacity-20 rounded-lg flex items-center justify-center">
@@ -69,42 +69,42 @@
         </div>
     </div>
 
-    <!-- 최근 생성된 곡 -->
+    <!-- Recent Songs -->
     <div class="bg-dark-card rounded-xl border border-gray-700">
         <div class="p-6 border-b border-gray-700">
-            <h3 class="text-xl font-bold text-white">최근 생성된 곡</h3>
+            <h3 class="text-xl font-bold text-white">Recently Created Songs</h3>
         </div>
         <div class="p-6">
             <div id="recent-songs" class="space-y-4">
-                <!-- 곡 목록이 여기에 표시됩니다 -->
+                <!-- Song list will be displayed here -->
                 <div class="text-center py-12 text-gray-400">
                     <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
                     </svg>
-                    <p>아직 생성된 곡이 없습니다</p>
+                    <p>No songs created yet</p>
                     <a href="{{ url_for('generate') }}" class="inline-block mt-4 px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors">
-                        첫 곡 생성하기
+                        Create Your First Song
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 빠른 작업 -->
+    <!-- Quick Actions -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl p-6 text-white">
-            <h3 class="text-xl font-bold mb-2">새 음악 생성</h3>
-            <p class="text-purple-100 mb-4">AI로 독창적인 음악을 만들어보세요</p>
+            <h3 class="text-xl font-bold mb-2">Generate New Music</h3>
+            <p class="text-purple-100 mb-4">Create original music with AI</p>
             <a href="{{ url_for('generate') }}" class="inline-block px-6 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                시작하기
+                Get Started
             </a>
         </div>
 
         <div class="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl p-6 text-white">
-            <h3 class="text-xl font-bold mb-2">라이브러리 관리</h3>
-            <p class="text-blue-100 mb-4">생성된 음악을 관리하고 다운로드하세요</p>
+            <h3 class="text-xl font-bold mb-2">Library Management</h3>
+            <p class="text-blue-100 mb-4">Manage and download your music</p>
             <a href="{{ url_for('library') }}" class="inline-block px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                라이브러리 열기
+                Open Library
             </a>
         </div>
     </div>
@@ -113,16 +113,16 @@
 
 {% block scripts %}
 <script>
-    // 대시보드 데이터 로드
+    // Load dashboard data
     async function loadDashboardData() {
         try {
             const response = await fetch('/api/songs?page=0');
             const data = await response.json();
-            const songs = data.clips || [];  // SUNO API는 'clips' 배열 사용
+            const songs = data.clips || [];  // SUNO API uses 'clips' array
 
             document.getElementById('total-songs').textContent = data.num_total_results || songs.length;
 
-            // 오늘 생성된 곡 수 계산
+            // Calculate today's songs
             const today = new Date().toDateString();
             const todaySongs = songs.filter(song => {
                 if (!song.created_at) return false;
@@ -130,17 +130,17 @@
             });
             document.getElementById('today-songs').textContent = todaySongs.length;
 
-            // 생성 중인 곡 수 (status가 'streaming' 또는 'submitted')
+            // Count songs being generated (status is 'streaming' or 'submitted')
             const generatingSongs = songs.filter(song =>
                 song.status === 'streaming' || song.status === 'submitted'
             );
             document.getElementById('generating-songs').textContent = generatingSongs.length;
 
-            // 최근 곡 표시 (실제 데이터가 있을 때)
+            // Display recent songs (when there's actual data)
             if (songs.length > 0) {
                 const recentSongsContainer = document.getElementById('recent-songs');
                 recentSongsContainer.innerHTML = songs.slice(0, 5).map(song => {
-                    const createdDate = song.created_at ? new Date(song.created_at).toLocaleString('ko-KR', {
+                    const createdDate = song.created_at ? new Date(song.created_at).toLocaleString('en-US', {
                         month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
                     }) : 'Just now';
                     const imageUrl = song.image_url || '';
@@ -163,17 +163,17 @@
                             </div>
                         </div>
                         <button onclick="window.location.href='{{ url_for("library") }}'" class="px-4 py-2 text-purple-400 hover:text-purple-300 transition-colors">
-                            보기
+                            View
                         </button>
                     </div>
                 `}).join('');
             }
         } catch (error) {
-            console.error('데이터 로드 실패:', error);
+            console.error('Failed to load data:', error);
         }
     }
 
-    // 페이지 로드 시 데이터 로드
+    // Load data on page load
     loadDashboardData();
 </script>
 {% endblock %}
