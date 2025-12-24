@@ -4,6 +4,14 @@
 
 SUNO AI를 활용한 모던한 음악 생성 및 관리 웹 애플리케이션입니다.
 
+## 스크린샷
+
+### 대시보드
+![대시보드](./screenshots/dashboard.png)
+
+### 음악 라이브러리
+![음악 라이브러리](./screenshots/music-library.png)
+
 ## 주요 기능
 
 - **로그인**: SUNO Bearer 토큰(JWT)을 사용한 인증

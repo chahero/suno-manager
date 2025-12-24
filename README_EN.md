@@ -4,6 +4,14 @@ English | [한국어](README.md)
 
 A modern web application for AI music generation and management using SUNO AI.
 
+## Screenshots
+
+### Dashboard
+![Dashboard](./screenshots/dashboard.png)
+
+### Music Library
+![Music Library](./screenshots/music-library.png)
+
 ## Features
 
 - **Authentication**: Login using SUNO Bearer token (JWT)
