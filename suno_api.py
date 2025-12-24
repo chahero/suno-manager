@@ -1,6 +1,9 @@
 import requests
 import os
 import uuid
+import base64
+import json
+import time
 from typing import Optional, List, Dict
 
 class SunoAPI:
@@ -19,34 +22,43 @@ class SunoAPI:
 
         self.session = requests.Session()
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36',
             'Accept': '*/*',
             'Accept-Language': 'en-US,en;q=0.9,ko;q=0.8',
             'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Content-Type': 'application/json',
             'Authorization': f'Bearer {self.bearer_token}' if self.bearer_token else '',
             'device-id': self.device_id,
+            'origin': 'https://suno.com',
+            'referer': 'https://suno.com/',
         }
 
-    def get_songs(self, page: int = 0) -> Dict:
+    def _get_browser_token(self) -> str:
+        """Generate browser token with current timestamp"""
+        timestamp_data = json.dumps({"timestamp": int(time.time() * 1000)}, separators=(',', ':'))
+        encoded_token = base64.b64encode(timestamp_data.encode()).decode().rstrip('=')
+        return json.dumps({"token": encoded_token}, separators=(',', ':'))
+
+    def get_songs(self, cursor: Optional[str] = None) -> Dict:
         """
-        Get generated music list
+        Get generated music list (v3 API with cursor-based pagination)
 
         Args:
-            page: Page number (starts from 0)
+            cursor: Cursor for pagination (None for first page)
 
         Returns:
-            Music list and metadata
+            Music list and metadata including next_cursor and has_more
         """
-        endpoint = f'{self.base_url}/feed/v2'
-        params = {
-            'hide_disliked': 'true',
-            'hide_gen_stems': 'true',
-            'hide_studio_clips': 'true',
-            'page': page
-        }
+        endpoint = f'{self.base_url}/feed/v3'
+        payload = {}
+        if cursor:
+            payload['cursor'] = cursor
+
+        # Add dynamic browser-token header
+        headers = {**self.headers, 'browser-token': self._get_browser_token()}
 
         try:
-            response = self.session.get(endpoint, params=params, headers=self.headers)
+            response = self.session.post(endpoint, json=payload, headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -55,26 +67,22 @@ class SunoAPI:
                 print(f"Response: {e.response.text}")
             return {
                 'clips': [],
-                'num_total_results': 0,
-                'current_page': 0,
+                'next_cursor': None,
                 'has_more': False
             }
 
-    def get_all_songs(self, max_pages: int = 10) -> List[Dict]:
+    def get_all_songs(self) -> List[Dict]:
         """
-        Get all music list (with pagination)
-
-        Args:
-            max_pages: Maximum number of pages
+        Get all music list (with cursor-based pagination)
 
         Returns:
             All music list
         """
         all_clips = []
-        page = 0
+        cursor = None
 
-        while page < max_pages:
-            result = self.get_songs(page=page)
+        while True:
+            result = self.get_songs(cursor=cursor)
             clips = result.get('clips', [])
 
             if not clips:
@@ -85,7 +93,9 @@ class SunoAPI:
             if not result.get('has_more', False):
                 break
 
-            page += 1
+            cursor = result.get('next_cursor')
+            if not cursor:
+                break
 
         return all_clips
 
@@ -200,8 +210,8 @@ class SunoAPI:
             Authentication status
         """
         try:
-            result = self.get_songs(page=0)
-            return 'clips' in result and result.get('num_total_results', 0) >= 0
+            result = self.get_songs()
+            return 'clips' in result
         except:
             return False
 

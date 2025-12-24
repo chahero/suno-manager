@@ -116,14 +116,37 @@
 
 {% block scripts %}
 <script>
+    // Load all songs using cursor-based pagination
+    async function loadAllSongs() {
+        let allSongs = [];
+        let cursor = null;
+        let hasMore = true;
+
+        while (hasMore) {
+            const url = cursor ? `/api/songs?cursor=${cursor}` : '/api/songs';
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.clips && data.clips.length > 0) {
+                allSongs = allSongs.concat(data.clips);
+            }
+
+            hasMore = data.has_more || false;
+            cursor = data.next_cursor;
+
+            // Safety limit
+            if (allSongs.length > 1000) break;
+        }
+
+        return allSongs;
+    }
+
     // Load dashboard data
     async function loadDashboardData() {
         try {
-            const response = await fetch('/api/songs?page=0');
-            const data = await response.json();
-            const songs = data.clips || [];  // SUNO API uses 'clips' array
+            const songs = await loadAllSongs();
 
-            document.getElementById('total-songs').textContent = data.num_total_results || songs.length;
+            document.getElementById('total-songs').textContent = songs.length;
 
             // Calculate today's songs
             const today = new Date().toDateString();

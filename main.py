@@ -143,16 +143,15 @@ def api_songs():
         if not client.is_authenticated():
             return jsonify({'error': 'Not authenticated'}), 401
 
-        page = request.args.get('page', 0, type=int)
+        cursor = request.args.get('cursor', None)
 
-        result = client.get_songs(page=page)
+        result = client.get_songs(cursor=cursor)
 
-        # Return response structure as is
+        # Return response structure
         return jsonify({
             'status': 'success',
             'clips': result.get('clips', []),
-            'num_total_results': result.get('num_total_results', 0),
-            'current_page': result.get('current_page', 0),
+            'next_cursor': result.get('next_cursor'),
             'has_more': result.get('has_more', False)
         })
 

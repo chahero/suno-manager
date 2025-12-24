@@ -96,6 +96,13 @@
 
         <!-- Songs cards will be dynamically added here -->
         <div id="songs-list"></div>
+
+        <!-- Song Count -->
+        <div id="pagination" class="hidden flex items-center justify-center mt-6">
+            <span class="text-gray-400 text-sm">
+                Total <span id="total-songs-display">0</span> songs
+            </span>
+        </div>
     </div>
 </div>
 
@@ -193,21 +200,44 @@
 <script>
     let songs = [];
     let songToDelete = null;
+    let totalSongs = 0;
 
-    // Load songs list
+    // Load all songs using cursor-based pagination
     async function loadSongs() {
         const loadingState = document.getElementById('loading-state');
         const emptyState = document.getElementById('empty-state');
         const songsList = document.getElementById('songs-list');
+        const pagination = document.getElementById('pagination');
 
         loadingState.classList.remove('hidden');
         emptyState.classList.add('hidden');
+        pagination.classList.add('hidden');
         songsList.innerHTML = '';
 
         try {
-            const response = await fetch('/api/songs?page=0');
-            const data = await response.json();
-            songs = data.clips || [];  // SUNO API uses 'clips' array
+            // Load all songs using cursor-based pagination
+            let allSongs = [];
+            let cursor = null;
+            let hasMore = true;
+
+            while (hasMore) {
+                const url = cursor ? `/api/songs?cursor=${cursor}` : '/api/songs';
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.clips && data.clips.length > 0) {
+                    allSongs = allSongs.concat(data.clips);
+                }
+
+                hasMore = data.has_more || false;
+                cursor = data.next_cursor;
+
+                // Safety limit to prevent infinite loops
+                if (allSongs.length > 1000) break;
+            }
+
+            songs = allSongs;
+            totalSongs = songs.length;
 
             loadingState.classList.add('hidden');
 
@@ -215,12 +245,19 @@
                 emptyState.classList.remove('hidden');
             } else {
                 renderSongs();
+                updateSongCount();
+                pagination.classList.remove('hidden');
             }
         } catch (error) {
             console.error('Failed to load music list:', error);
             loadingState.classList.add('hidden');
             emptyState.classList.remove('hidden');
         }
+    }
+
+    // Update song count display
+    function updateSongCount() {
+        document.getElementById('total-songs-display').textContent = totalSongs;
     }
 
     // Render song cards

@@ -80,10 +80,12 @@ SECRET_KEY=your_random_secret_key
 2. 브라우저 개발자 도구 열기 (F12)
 3. **Network** 탭 선택
 4. 페이지 새로고침 (F5)
-5. 요청 목록에서 `feed` 또는 `api`로 시작하는 요청 클릭
+5. 요청 목록에서 `feed/v3` 요청 클릭
 6. **Request Headers**에서 `authorization` 헤더 찾기
-7. `Bearer eyJhbGciOiJSUzI1NiIs...` 값에서 토큰 복사 (Bearer 포함 또는 제외)
+7. `Bearer eyJhbGciOiJSUzI1NiIs...` 값에서 `Bearer ` 뒤의 토큰만 복사
 8. `.env` 파일의 `SUNO_BEARER_TOKEN`에 붙여넣기
+
+> **참고**: Bearer 토큰은 약 1시간마다 만료됩니다. 401 에러가 발생하면 새 토큰을 가져오세요.
 
 또는 애플리케이션 실행 후 로그인 페이지에서 직접 입력할 수도 있습니다.
 
@@ -151,8 +153,11 @@ GET /api/billing/info
 ### 곡 목록 조회
 
 ```http
-GET /api/songs?page=0
+GET /api/songs
+GET /api/songs?cursor={next_cursor}
 ```
+
+> Cursor 기반 페이지네이션을 사용합니다. 첫 요청은 cursor 없이, 이후 요청은 응답의 `next_cursor` 값을 사용합니다.
 
 ### 곡 삭제
 
@@ -179,10 +184,12 @@ Content-Type: application/json
 
 ## 실제 SUNO API 연동
 
-이 프로젝트는 실제 SUNO Studio API를 사용합니다:
+이 프로젝트는 실제 SUNO Studio API v3를 사용합니다:
 
-- **API Endpoint**: `https://studio-api.prod.suno.com/api`
-- **인증 방식**: Bearer Token (JWT)
+- **API Endpoint**: `https://studio-api.prod.suno.com/api/feed/v3`
+- **HTTP Method**: POST
+- **인증 방식**: Bearer Token (JWT) + Browser Token (자동 생성)
+- **페이지네이션**: Cursor 기반 (`next_cursor`, `has_more`)
 - **응답 구조**: 실제 SUNO 응답 구조 사용 (`clips` 배열)
 
 ## 특징

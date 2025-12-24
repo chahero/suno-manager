@@ -80,10 +80,12 @@ SECRET_KEY=your_random_secret_key
 2. Open browser developer tools (F12)
 3. Select **Network** tab
 4. Refresh the page (F5)
-5. Click on any request starting with `feed` or `api`
+5. Click on `feed/v3` request in the list
 6. Find `authorization` header in **Request Headers**
-7. Copy the `Bearer eyJhbGciOiJSUzI1NiIs...` value (with or without Bearer prefix)
+7. Copy only the token after `Bearer ` (e.g., `eyJhbGciOiJSUzI1NiIs...`)
 8. Paste it in `.env` file's `SUNO_BEARER_TOKEN`
+
+> **Note**: Bearer tokens expire approximately every hour. If you get a 401 error, fetch a new token.
 
 Or you can enter it directly on the login page after running the application.
 
@@ -151,8 +153,11 @@ GET /api/billing/info
 ### Get Songs List
 
 ```http
-GET /api/songs?page=0
+GET /api/songs
+GET /api/songs?cursor={next_cursor}
 ```
+
+> Uses cursor-based pagination. First request without cursor, subsequent requests use `next_cursor` from response.
 
 ### Delete Song
 
@@ -179,10 +184,12 @@ Content-Type: application/json
 
 ## SUNO API Integration
 
-This project uses the actual SUNO Studio API:
+This project uses the actual SUNO Studio API v3:
 
-- **API Endpoint**: `https://studio-api.prod.suno.com/api`
-- **Authentication**: Bearer Token (JWT)
+- **API Endpoint**: `https://studio-api.prod.suno.com/api/feed/v3`
+- **HTTP Method**: POST
+- **Authentication**: Bearer Token (JWT) + Browser Token (auto-generated)
+- **Pagination**: Cursor-based (`next_cursor`, `has_more`)
 - **Response Structure**: Uses actual SUNO response structure (`clips` array)
 
 ## Highlights
