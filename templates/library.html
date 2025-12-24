@@ -36,7 +36,18 @@
 
     <!-- Search and Filter -->
     <div class="bg-dark-card rounded-xl border border-gray-700 p-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Select All Checkbox -->
+            <div class="flex items-center">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox"
+                           id="select-all-checkbox"
+                           class="w-5 h-5 rounded border-gray-600 bg-dark-bg text-purple-600 focus:ring-purple-500 focus:ring-2 cursor-pointer"
+                           onchange="toggleSelectAll()"
+                    />
+                    <span class="ml-2 text-gray-300">Select All</span>
+                </label>
+            </div>
             <div class="md:col-span-2">
                 <div class="relative">
                     <input
@@ -246,6 +257,12 @@
             return;
         }
 
+        // Reset select all checkbox and batch buttons when rendering
+        document.getElementById('select-all-checkbox').checked = false;
+        document.getElementById('select-all-checkbox').indeterminate = false;
+        document.getElementById('batch-download-btn').classList.add('hidden');
+        document.getElementById('batch-delete-btn').classList.add('hidden');
+
         songsList.innerHTML = filteredSongs.map(song => {
             const duration = song.metadata?.duration ? Math.round(song.metadata.duration) : 0;
             const createdDate = song.created_at ? new Date(song.created_at).toLocaleString('en-US', {
@@ -417,6 +434,39 @@
         document.getElementById('lyrics-modal').classList.add('hidden');
     }
 
+    // Toggle select all checkboxes
+    function toggleSelectAll() {
+        const selectAllCheckbox = document.getElementById('select-all-checkbox');
+        const checkboxes = document.querySelectorAll('.song-checkbox');
+
+        checkboxes.forEach(cb => {
+            cb.checked = selectAllCheckbox.checked;
+        });
+
+        updateBatchButtons();
+    }
+
+    // Update select all checkbox state based on individual checkboxes
+    function updateSelectAllCheckbox() {
+        const selectAllCheckbox = document.getElementById('select-all-checkbox');
+        const checkboxes = document.querySelectorAll('.song-checkbox');
+        const checkedBoxes = document.querySelectorAll('.song-checkbox:checked');
+
+        if (checkboxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+        } else if (checkedBoxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+        } else if (checkedBoxes.length === checkboxes.length) {
+            selectAllCheckbox.checked = true;
+            selectAllCheckbox.indeterminate = false;
+        } else {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = true;
+        }
+    }
+
     // Update batch download/delete buttons
     function updateBatchButtons() {
         const checkboxes = document.querySelectorAll('.song-checkbox:checked');
@@ -440,6 +490,9 @@
             downloadBtn.classList.add('hidden');
             deleteBtn.classList.add('hidden');
         }
+
+        // Update select all checkbox state
+        updateSelectAllCheckbox();
     }
 
     // Batch download
