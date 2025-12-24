@@ -159,18 +159,20 @@ class SunoAPI:
                 print(f"Response: {e.response.text}")
             return False
 
-    def download_song(self, song_id: str, output_path: str) -> bool:
+    def download_song(self, song_id: str, output_path: str, song_info: Optional[Dict] = None) -> bool:
         """
         Download music
 
         Args:
             song_id: Music ID to download
             output_path: Save path
+            song_info: Optional song info dict (to avoid redundant API calls)
 
         Returns:
             Success status
         """
-        song_info = self.get_song(song_id)
+        if song_info is None:
+            song_info = self.get_song(song_id)
         if not song_info:
             return False
 

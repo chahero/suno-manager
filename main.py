@@ -242,12 +242,16 @@ def api_batch_download():
         # Create ZIP file in memory
         memory_zip = BytesIO()
 
+        # Fetch all songs once to avoid repeated API calls
+        all_songs = client.get_all_songs()
+        songs_dict = {song.get('id'): song for song in all_songs}
+
         # Create temporary directory
         with tempfile.TemporaryDirectory() as temp_dir:
             # Download each song
             downloaded_files = []
             for song_id in song_ids:
-                song = client.get_song(song_id)
+                song = songs_dict.get(song_id)
                 if not song:
                     continue
 
@@ -256,8 +260,8 @@ def api_batch_download():
                 filename = f"{title}_{song_id}.mp3"
                 filepath = os.path.join(temp_dir, filename)
 
-                # Download
-                if client.download_song(song_id, filepath):
+                # Download (pass song info to avoid redundant API calls)
+                if client.download_song(song_id, filepath, song_info=song):
                     downloaded_files.append((filepath, filename))
 
             if not downloaded_files:
