@@ -2,7 +2,7 @@
 
 English | [한국어](README.md)
 
-A modern web application for AI music generation and management using SUNO AI.
+A modern web application for AI music generation and management using SUNO API.
 
 ## Screenshots
 
