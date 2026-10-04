@@ -1,137 +1,43 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - SUNO Manager</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        dark: {
-                            bg: '#0f172a',
-                            card: '#1e293b',
-                            hover: '#334155',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>로그인 · SUNO Manager</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0f172a;color:#f1f5f9;font:15px/1.7 system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px}
+main{width:100%;max-width:530px;background:#1e293b;border:1px solid #334155;border-radius:15px;padding:34px}h1{margin:0 0 12px;color:#c4b5fd;font-size:28px}.muted{color:#94a3b8;font-size:14px}input{width:100%;margin:12px 0;padding:13px;border:1px solid #475569;border-radius:8px;background:#0f172a;color:white;font:inherit}button{width:100%;padding:12px;border:0;border-radius:8px;background:#7c3aed;color:white;font:inherit;cursor:pointer}button:disabled{opacity:.5}a{color:#c4b5fd}#error{color:#fca5a5;white-space:pre-wrap}code{color:#c4b5fd}
+</style>
 </head>
-<body class="bg-dark-bg text-gray-100 min-h-screen flex items-center justify-center">
-    <div class="max-w-md w-full mx-4">
-        <!-- Logo -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent mb-2">
-                SUNO Manager
-            </h1>
-            <p class="text-gray-400">AI Music Generator</p>
-        </div>
-
-        <!-- Login Card -->
-        <div class="bg-dark-card rounded-xl border border-gray-700 p-8">
-            <h2 class="text-2xl font-bold text-white mb-6">Login</h2>
-
-            {% if error %}
-            <div class="mb-4 p-4 bg-red-600 bg-opacity-20 border border-red-500 rounded-lg text-red-400">
-                {{ error }}
-            </div>
-            {% endif %}
-
-            <form id="login-form" method="POST" action="{{ url_for('login') }}" class="space-y-6">
-                <div>
-                    <label for="token" class="block text-sm font-medium text-gray-300 mb-2">
-                        SUNO Bearer Token
-                    </label>
-                    <textarea
-                        id="token"
-                        name="token"
-                        rows="4"
-                        required
-                        class="w-full px-4 py-3 bg-dark-bg border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all font-mono text-xs"
-                        placeholder="Bearer eyJhbGciOiJSUzI1NiIsImNhd..."
-                    ></textarea>
-                    <p class="text-xs text-gray-500 mt-1">Paste the entire JWT token (with or without "Bearer" prefix)</p>
-                </div>
-
-                <button
-                    type="submit"
-                    class="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-dark-bg"
-                >
-                    Login
-                </button>
-            </form>
-
-            <!-- Token Guide -->
-            <div class="mt-8 pt-8 border-t border-gray-700">
-                <h3 class="text-sm font-semibold text-gray-300 mb-4">How to get Bearer Token</h3>
-                <ol class="text-sm text-gray-400 space-y-2 list-decimal list-inside">
-                    <li>Log in to SUNO website (<a href="https://suno.com" target="_blank" class="text-purple-400 hover:text-purple-300">suno.com</a>)</li>
-                    <li>Open browser developer tools (F12)</li>
-                    <li>Select the <code class="px-2 py-1 bg-dark-bg rounded text-purple-400">Network</code> tab</li>
-                    <li>Refresh the page (F5)</li>
-                    <li>Click on any request starting with <code class="px-2 py-1 bg-dark-bg rounded text-purple-400">feed</code> or <code class="px-2 py-1 bg-dark-bg rounded text-purple-400">api</code></li>
-                    <li>Find <code class="px-2 py-1 bg-dark-bg rounded text-purple-400">authorization</code> in <code class="px-2 py-1 bg-dark-bg rounded text-purple-400">Request Headers</code></li>
-                    <li>Copy the entire <code class="px-2 py-1 bg-dark-bg rounded text-purple-400">Bearer eyJ...</code> value</li>
-                    <li>Paste it in the input field above</li>
-                </ol>
-                <div class="mt-4 p-3 bg-blue-600 bg-opacity-20 border border-blue-500 rounded-lg text-xs text-blue-300">
-                    <strong>Tip:</strong> You can include or exclude the "Bearer" prefix. It will be handled automatically.
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="text-center mt-8 text-gray-500 text-sm">
-            <p>This token is stored on the server and will be deleted when you log out</p>
-        </div>
-    </div>
-
-    <script>
-        const form = document.getElementById('login-form');
-
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            let token = document.getElementById('token').value.trim();
-            const button = form.querySelector('button[type="submit"]');
-
-            // Auto-remove "Bearer " prefix
-            if (token.toLowerCase().startsWith('bearer ')) {
-                token = token.substring(7).trim();
-            }
-
-            button.disabled = true;
-            button.textContent = 'Authenticating...';
-
-            try {
-                const response = await fetch('{{ url_for("login") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ token })
-                });
-
-                if (response.ok) {
-                    window.location.href = '{{ url_for("index") }}';
-                } else {
-                    const data = await response.json();
-                    alert(data.error || 'Login failed');
-                    button.disabled = false;
-                    button.textContent = 'Login';
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                alert('An error occurred during login');
-                button.disabled = false;
-                button.textContent = 'Login';
-            }
-        });
-    </script>
-</body>
-</html>
+<body><main>
+<h1>♫ SUNO Manager</h1>
+<p class="muted">Suno 토큰으로 개인 라이브러리를 연결하세요.</p>
+<form id="login-form">
+    <label for="token">Bearer 토큰</label>
+    <input id="token" name="token" type="password" required autocomplete="off" placeholder="Bearer eyJ… 또는 eyJ…">
+    <button type="submit">로그인</button>
+    <p id="error" role="alert"></p>
+</form>
+<details><summary>토큰 가져오는 방법</summary>
+    <ol class="muted">
+        <li><a href="https://suno.com" target="_blank" rel="noopener">Suno</a>에 로그인합니다.</li>
+        <li>개발자 도구(F12) → Network에서 새로고침합니다.</li>
+        <li><code>feed/v3</code> 요청의 Headers → Request Headers → <code>authorization</code> 값을 복사합니다.</li>
+    </ol>
+</details>
+<p class="muted">입력한 토큰은 서버 메모리에 보관하며, 로그아웃·서버 재시작 시 삭제됩니다. .env 토큰은 파일에 유지됩니다. 만료되면 새 토큰이 필요합니다.</p>
+</main>
+<script>
+document.getElementById('login-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = event.target.querySelector('button'), error = document.getElementById('error');
+    button.disabled = true; button.textContent = '확인 중…'; error.textContent = '';
+    try {
+        const response = await fetch('/login', {method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({token: document.getElementById('token').value.trim()})});
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || '로그인에 실패했습니다.');
+        window.location.href = '/';
+    } catch (failure) { error.textContent = failure.message; }
+    finally { button.disabled = false; button.textContent = '로그인'; }
+});
+</script>
+</body></html>

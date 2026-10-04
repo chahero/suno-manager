@@ -2,224 +2,155 @@
 
 English | [한국어](README.md)
 
-A modern web application for AI music generation and management using SUNO API.
+A local Flask app for viewing your Suno library, saving authorized MP3 files and recording Windows playback as WAV.
+On 2026-10-04, a real account verified listing, direct MP3 download for an already unlocked song,
+ZIP download, and playback from the local cache. New authorization is implemented and mock-tested;
+no additional song was unlocked during validation.
 
-## Screenshots
+## Supported features
 
-### Dashboard
-![Dashboard](./screenshots/dashboard.png)
+- Token login; library, song details, lyrics, search, sorting and pagination.
+- MP3 download and ZIP downloads of up to 50 selected songs, with a failure manifest.
+- A CLI that works without opening a browser or starting the Flask server.
+- Playback of downloaded MP3 files; other tracks use Suno's official embedded player.
+- Live account credits and remaining download allowance.
+- Per-song Windows playback recording, WAV playback and download in the library.
 
-### Music Library
-![Music Library](./screenshots/music-library.png)
+The old generation and deletion implementations have been retired. Their API routes return 501,
+and the UI links to Suno for those operations. Suno source WAV/M4A/video export is not implemented.
 
-## Features
+## Setup
 
-- **Authentication**: Login using SUNO Bearer token (JWT)
-- **Dashboard**: View generated music statistics and recent songs
-- **Music Generation**: Generate music using AI prompts *(Coming Soon)*
-- **Music Library**: Manage, play, download, and delete generated music
-- **Global Audio Player**: Bottom-fixed player with equalizer animation
-- **Lyrics View**: Display song lyrics/prompt in popup
-- **Batch Download**: Download selected songs as ZIP file
-- **Batch Delete**: Delete multiple selected songs at once
-- **Credits Info**: Real-time credits and subscription info display
+Requires Python 3.10+.
 
-## Tech Stack
-
-- **Backend**: Flask 3.0
-- **Frontend**: Tailwind CSS (Dark Mode)
-- **API**: SUNO Studio API (Real API Integration)
-
-## Project Structure
-
-```
-suno-manager/
-├── main.py                 # Flask application main file
-├── suno_api.py            # SUNO API client
-├── templates/             # HTML templates
-│   ├── base.html         # Base layout (includes global player)
-│   ├── login.html        # Login page
-│   ├── dashboard.html    # Dashboard page
-│   ├── generate.html     # Music generation page
-│   └── library.html      # Library page
-├── static/               # Static files
-├── downloads/            # Downloaded music files
-├── .env                  # Environment variables
-├── .env.example          # Environment variables example
-└── README.md
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+Copy-Item .env.example .env
 ```
 
-## Installation & Setup
+Set `SUNO_BEARER_TOKEN` in `.env` (with or without the Bearer prefix).
+In your logged-in Suno browser, open Developer Tools → Network → reload → `feed/v3` →
+Headers → Request Headers → `authorization`.
 
-### 1. Install Packages
+Use a random `SECRET_KEY`, `DEBUG=False`, and `HOST=127.0.0.1`.
+Run `.\.venv\Scripts\python.exe main.py` or `start.bat`, then open
+[the local app](http://127.0.0.1:5000). `start.bat` prefers the project virtual environment.
 
-Install required Python packages:
+Expired tokens return an explicit 401. Refresh the token through the login page, or edit `.env`
+and restart the server. UI tokens are stored in server memory, not the browser session cookie,
+and are removed on logout or server restart. Logging out prevents that browser from falling back
+to the environment token.
 
-```bash
-pip install Flask requests python-dotenv
+## Play and record each song
+
+Open [the library](http://127.0.0.1:5000/library) and click **재생·녹음** on a song.
+Its dialog includes playback, recording controls and WAV recordings belonging to that song.
+It captures Windows speaker/headphone output through WASAPI loopback, rather than a microphone.
+`PyAudioWPatch` and `playwright` are installed on Windows by `requirements.txt`. Microsoft Edge is required. Run the server locally in one process.
+
+1. Click the song's **재생·녹음** button once in the library.
+2. The app prepares capture and automatically plays the song from the beginning.
+3. The actual song ending stops playback and recording and automatically saves a WAV.
+4. Play or download the result under **이 곡의 녹음**. **녹음 N개 보기** opens existing results without starting a new session.
+
+Cached MP3s play in the current browser. Other songs use Suno's official player in an isolated temporary Edge session, without a separate visible window or access to the user's browser profile. Online automatic playback records the Windows default output device. The full song must be playable in Suno's embed. Playback that makes no progress for 30 seconds fails and cleans up its session.
+
+A duration of 0 means stop at the song ending; 1–3600 also sets a capture time limit.
+All sessions stop after at most one hour. Closing the dialog or pressing Esc stops and saves recording.
+Leaving the library also sends a stop/save request. If abrupt browser closure prevents delivery,
+return to the library's active-recording control or wait for automatic stop. Server shutdown also ends recording.
+WAVs use the device's native sample rate, 16-bit PCM and up to two channels. WAVs and JSON metadata
+persist in `DOWNLOAD_FOLDER/recordings/` and remain available after a server restart.
+The `song_id` field associates results with the correct song, even when titles are identical.
+When the Suno token expires, the library falls back to songs associated with local MP3s and recordings.
+Use **새 토큰으로 로그인** to restore the full online library and download authorization.
+
+Recording does not call Suno's download or authorization APIs, so it does not consume their allowance.
+Capture takes real time and includes notifications and other apps playing through the selected device.
+Saving as WAV does not improve the source audio quality. Changes to Suno's player may require updating the automatic controls.
+
+## Download without clicking
+
+```powershell
+# List UUID, unlocked/locked status and title
+.\.venv\Scripts\python.exe download.py --list
+
+# Already unlocked song; ID is the last UUID in its Suno URL
+.\.venv\Scripts\python.exe download.py d4865d3e-d7c0-4a05-afee-fa0cfe2cd116
+
+# Back up already unlocked library songs; skip locked songs
+.\.venv\Scripts\python.exe download.py --all
+
+# Explicitly authorize a new download, using the account allowance
+.\.venv\Scripts\python.exe download.py SONG_UUID --unlock
+
+# Custom output folder
+.\.venv\Scripts\python.exe download.py SONG_UUID --output "D:\Music"
 ```
 
-### 2. Environment Setup
+Multiple UUIDs can be supplied. Files are saved as `UUID.mp3` in `DOWNLOAD_FOLDER` by default.
+Using the same folder as Flask makes CLI downloads available in the local player.
+Valid existing MP3 files are reused. Failures exit with code 1.
+`--all --unlock` authorizes each locked song, so use it only when intended.
 
-Copy `.env.example` to `.env` and modify with actual values:
+## Current download flow
 
-```bash
-cp .env.example .env
+Old direct `audio_url` downloads can now return `/api/forbidden` and HTTP 403.
+The client instead checks `GET /api/clip/{id}`, optionally sends a single
+`POST /api/download/authorize`, then polls `GET /api/download/clip/{id}?format=mp3`.
+The returned HTTPS file URL is fetched without a Suno bearer token.
+The file size and MP3 header are checked before an atomic save.
+
+This follows account permissions and [Suno's download allowance](https://help.suno.com/en/articles/13876865).
+Re-downloading a previously downloaded song does not use another allowance.
+Ambiguous authorization responses are not automatically retried. Check unlock status and usage before retrying.
+An approval may have consumed an allowance even if file preparation or transfer later fails.
+ZIPs contain `download-results.json` with successful and failed song IDs. Sanitized attachment/ZIP names
+avoid Windows filename errors, while cache files use UUID names.
+
+The recorder is provided for technical verification of local playback capture.
+[Suno's terms](https://suno.com/terms) restrict obtaining copies outside Suno-provided download channels and explicitly name recording and stream ripping.
+
+## Local API
+
+- `POST /login` with `{"token":"..."}`; `GET /api/auth/check`.
+- `GET /api/billing/info`: credits, plan, remaining downloads.
+- `GET /api/songs?cursor=...` (URL-encode cursors); `GET /api/songs/{id}`.
+- `GET /api/songs/local`: locally cached/recorded songs without a token, localhost only.
+- `GET /api/songs/{id}/download`: already unlocked MP3 only.
+- `POST /api/songs/{id}/download` with `{"unlock":false}`: set true to authorize a new download.
+- `POST /api/songs/batch-download` with `{"song_ids":["UUID"],"unlock":false}`.
+- `GET /api/songs/{id}/audio`: cached MP3 with range support.
+- `GET /api/recordings/devices`; `GET /api/recordings/status`.
+- `POST /api/recordings/start` with `{"device_id":25,"title":"Recording","duration":0,"song_id":"UUID","auto_playback":true}`; use the default output device for automatic Suno playback. With false, the UI handles cached MP3 playback.
+- `POST /api/recordings/{id}/stop` with `{}`.
+- `GET /api/recordings?song_id=UUID`: saved sessions for one song; omit the filter to list all.
+- `GET /api/recordings/{id}/audio` or `/download`: WAV playback/download with range support.
+- `POST /api/generate` and `DELETE /api/songs/{id}`: 501.
+
+Recording APIs accept only localhost requests and do not require Suno authentication.
+
+## Validation and limitations
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-Set the following values in `.env`:
+Tests mock Suno requests and do not generate, delete or unlock real songs.
+They cover authentication, pagination, explicit authorization, uncertain approval handling,
+invalid audio, partial ZIP results and server-side token storage/logout.
+Recording tests cover loopback filtering, exact PCM/WAV data, duplicate starts, automatic stop,
+device failure, local access restrictions and WAV playback/download without a Suno token.
+Tests also cover song association/filtering, legacy recording links and cached MP3 playback independent of live Suno authentication.
+A real downloaded MP3 was also checked with ffprobe and a full ffmpeg decode.
+An actual UI session recorded a test tone into 8.256 seconds of stereo 48kHz WAV;
+audio signal, browser playback and a full decode were verified.
+The per-song UI was checked with real cached MP3 and Suno official-player sources.
+A single click automatically played an entire uncached 128.6-second song and saved a stereo 48kHz WAV when the song ended (130.176 seconds including preparation/output buffering). Browser playback, exact download bytes, range responses and full ffmpeg decoding passed.
+Tests cover capture-before-play ordering, song endings and repeat boundaries, manual stop and browser/temporary-file cleanup on failures.
+ffmpeg is not required to run the application.
 
-```
-SUNO_BEARER_TOKEN=your_actual_bearer_token
-SECRET_KEY=your_random_secret_key
-```
-
-### 3. Get SUNO Bearer Token
-
-1. Log in to [SUNO website](https://suno.com)
-2. Open browser developer tools (F12)
-3. Select **Network** tab
-4. Refresh the page (F5)
-5. Click on `feed/v3` request in the list
-6. Find `authorization` header in **Request Headers**
-7. Copy only the token after `Bearer ` (e.g., `eyJhbGciOiJSUzI1NiIs...`)
-8. Paste it in `.env` file's `SUNO_BEARER_TOKEN`
-
-> **Note**: Bearer tokens expire approximately every hour. If you get a 401 error, fetch a new token.
-
-Or you can enter it directly on the login page after running the application.
-
-### 4. Run Application
-
-```bash
-python main.py
-```
-
-Open `http://localhost:5000` in your browser
-
-## Usage
-
-### Login
-
-1. Open `http://localhost:5000` in your browser
-2. Enter SUNO Bearer token (JWT token)
-3. Click Login button
-
-### Dashboard
-
-- View total songs, generating songs, and today's songs statistics
-- Preview 5 recently created songs
-- Check credits info and subscription status
-
-### Music Library
-
-- View all generated music
-- Search and sort features (by title, date)
-- Actions available for each song:
-  - **Play**: Play music in bottom player
-  - **Lyrics**: Show lyrics/prompt popup
-  - **Download**: Download MP3 file
-  - **Delete**: Delete music
-- Batch Download: Select multiple songs and download as ZIP file
-- Batch Delete: Select and delete multiple songs at once
-
-### Music Generation *(Coming Soon)*
-
-> This feature is currently under development.
-
-- Generate music by entering prompts
-- Set advanced options like genre, mood, tempo
-- Example prompts provided
-
-## API Endpoints
-
-### Authentication
-
-```http
-POST /login
-Content-Type: application/json
-
-{
-  "token": "eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIs..."
-}
-```
-
-### Get Credits Info
-
-```http
-GET /api/billing/info
-```
-
-### Get Songs List
-
-```http
-GET /api/songs
-GET /api/songs?cursor={next_cursor}
-```
-
-> Uses cursor-based pagination. First request without cursor, subsequent requests use `next_cursor` from response.
-
-### Delete Song
-
-```http
-DELETE /api/songs/{song_id}
-```
-
-### Download Song
-
-```http
-GET /api/songs/{song_id}/download
-```
-
-### Batch Download
-
-```http
-POST /api/songs/batch-download
-Content-Type: application/json
-
-{
-  "song_ids": ["id1", "id2", "id3"]
-}
-```
-
-## SUNO API Integration
-
-This project uses the actual SUNO Studio API v3:
-
-- **API Endpoint**: `https://studio-api.prod.suno.com/api/feed/v3`
-- **HTTP Method**: POST
-- **Authentication**: Bearer Token (JWT) + Browser Token (auto-generated)
-- **Pagination**: Cursor-based (`next_cursor`, `has_more`)
-- **Response Structure**: Uses actual SUNO response structure (`clips` array)
-
-## Highlights
-
-- **Real-time Data**: View your SUNO account's music list in real-time
-- **Global Audio Player**: Music playback continues during page navigation
-- **Equalizer Animation**: Visualize currently playing song
-- **Album Covers**: Display SUNO-generated images
-- **Play Count**: View play count for each song
-- **Tags Display**: Show genre/style tags
-- **Credits Info**: Real-time credits balance and subscription info
-- **Session Management**: Token management via Flask session
-
-## Development Environment
-
-- Python 3.8+
-- Flask 3.0
-- Modern browsers (Chrome, Firefox, Safari, Edge)
-
-## Security Notes
-
-- Never commit `.env` file to Git
-- Keep Bearer tokens secure as they contain sensitive information
-- Bearer tokens expire after some time and need periodic renewal
-- Always change `SECRET_KEY` in production environment
-
-## License
-
-MIT License
-
-## Contributing
-
-Issues and pull requests are always welcome!
+Designed for personal, local, single-process use. Suno's internal web API can change;
+automatic token refresh is not implemented. `.env` and `downloads/` are ignored by Git.
+The current endpoints were cross-checked against [sunox's public implementation](https://github.com/ctykwz/sunox/blob/main/src/api/download.rs).

@@ -1,205 +1,63 @@
 {% extends "base.html" %}
-
-{% block title %}Dashboard - SUNO Manager{% endblock %}
-
+{% block title %}대시보드 · SUNO Manager{% endblock %}
 {% block content %}
-<div class="space-y-6">
-    <!-- Header -->
-    <div>
-        <h2 class="text-3xl font-bold text-white">Dashboard</h2>
-        <p class="text-gray-400 mt-2">Check your SUNO AI music generation status</p>
-    </div>
-
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-dark-card rounded-xl p-6 border border-gray-700 hover:border-purple-500 transition-colors">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-400 text-sm">Total Songs</p>
-                    <h3 class="text-3xl font-bold text-white mt-2" id="total-songs">0</h3>
-                </div>
-                <div class="w-12 h-12 bg-purple-600 bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-dark-card rounded-xl p-6 border border-gray-700 hover:border-blue-500 transition-colors">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-400 text-sm">Generating</p>
-                    <h3 class="text-3xl font-bold text-white mt-2" id="generating-songs">0</h3>
-                </div>
-                <div class="w-12 h-12 bg-blue-600 bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <svg class="w-6 h-6 text-blue-500 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-dark-card rounded-xl p-6 border border-gray-700 hover:border-green-500 transition-colors">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-400 text-sm">Created Today</p>
-                    <h3 class="text-3xl font-bold text-white mt-2" id="today-songs">0</h3>
-                </div>
-                <div class="w-12 h-12 bg-green-600 bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-dark-card rounded-xl p-6 border border-gray-700 hover:border-pink-500 transition-colors">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-400 text-sm">Storage Used</p>
-                    <h3 class="text-3xl font-bold text-white mt-2">2.4GB</h3>
-                </div>
-                <div class="w-12 h-12 bg-pink-600 bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <svg class="w-6 h-6 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Songs -->
-    <div class="bg-dark-card rounded-xl border border-gray-700">
-        <div class="p-6 border-b border-gray-700">
-            <h3 class="text-xl font-bold text-white">Recently Created Songs</h3>
-        </div>
-        <div class="p-6">
-            <div id="recent-songs" class="space-y-4">
-                <!-- Song list will be displayed here -->
-                <div class="text-center py-12 text-gray-400">
-                    <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                    </svg>
-                    <p>No songs created yet</p>
-                    <a href="{{ url_for('library') }}" class="inline-block mt-4 px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors">
-                        Go to Library
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-gradient-to-br from-gray-600 to-gray-700 rounded-xl p-6 text-white opacity-75">
-            <div class="flex items-center mb-2">
-                <h3 class="text-xl font-bold">Generate New Music</h3>
-                <span class="ml-3 text-xs bg-gray-500 px-2 py-1 rounded">Coming Soon</span>
-            </div>
-            <p class="text-gray-300 mb-4">Create original music with AI</p>
-            <span class="inline-block px-6 py-3 bg-gray-500 text-gray-300 rounded-lg font-semibold cursor-not-allowed">
-                Coming Soon
-            </span>
-        </div>
-
-        <div class="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl p-6 text-white">
-            <h3 class="text-xl font-bold mb-2">Library Management</h3>
-            <p class="text-blue-100 mb-4">Manage and download your music</p>
-            <a href="{{ url_for('library') }}" class="inline-block px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                Open Library
-            </a>
-        </div>
-    </div>
+<h1>대시보드</h1>
+<p class="muted">Suno 라이브러리와 다운로드 상태를 확인하세요.</p>
+<div class="metrics">
+    <div class="card metric"><span class="muted">전체 곡</span><strong id="total-songs">—</strong></div>
+    <div class="card metric"><span class="muted">오늘 생성</span><strong id="today-songs">—</strong></div>
+    <div class="card metric"><span class="muted">다운로드 잠금 해제</span><strong id="unlocked-songs">—</strong></div>
+    <div class="card metric"><span class="muted">로컬 MP3 저장</span><strong id="cached-songs">—</strong></div>
+</div>
+<div class="card">
+    <div class="toolbar"><h2>최근 만든 곡</h2><span class="spacer"></span><a class="button primary" href="/library">라이브러리 열기</a></div>
+    <div id="recent-songs"><p class="muted">목록을 불러오고 있습니다…</p></div>
+</div>
+<div class="card">
+    <h2>브라우저 없이 MP3 다운로드</h2>
+    <p class="muted">명령줄에서 곡 ID를 지정하거나 이미 잠금 해제한 곡을 한 번에 저장할 수 있습니다.</p>
+    <p><code>python download.py --all</code></p>
+    <p class="small muted">기본값은 이미 잠금 해제된 곡만 다운로드합니다. 새로운 승인은 <code>--unlock</code>으로 허용하며 계정의 다운로드 한도를 사용합니다.</p>
+    <a href="/generate">음악 생성·관리 안내 →</a>
 </div>
 {% endblock %}
-
 {% block scripts %}
 <script>
-    // Load all songs using cursor-based pagination
-    async function loadAllSongs() {
-        let allSongs = [];
+    async function loadDashboard() {
+        const songs = new Map(), cursors = new Set();
         let cursor = null;
-        let hasMore = true;
-
-        while (hasMore) {
-            const url = cursor ? `/api/songs?cursor=${cursor}` : '/api/songs';
-            const response = await fetch(url);
-            const data = await response.json();
-
-            if (data.clips && data.clips.length > 0) {
-                allSongs = allSongs.concat(data.clips);
-            }
-
-            hasMore = data.has_more || false;
-            cursor = data.next_cursor;
-
-            // Safety limit
-            if (allSongs.length > 1000) break;
-        }
-
-        return allSongs;
-    }
-
-    // Load dashboard data
-    async function loadDashboardData() {
         try {
-            const songs = await loadAllSongs();
-
-            document.getElementById('total-songs').textContent = songs.length;
-
-            // Calculate today's songs
-            const today = new Date().toDateString();
-            const todaySongs = songs.filter(song => {
-                if (!song.created_at) return false;
-                return new Date(song.created_at).toDateString() === today;
-            });
-            document.getElementById('today-songs').textContent = todaySongs.length;
-
-            // Count songs being generated (status is 'streaming' or 'submitted')
-            const generatingSongs = songs.filter(song =>
-                song.status === 'streaming' || song.status === 'submitted'
-            );
-            document.getElementById('generating-songs').textContent = generatingSongs.length;
-
-            // Display recent songs (when there's actual data)
-            if (songs.length > 0) {
-                const recentSongsContainer = document.getElementById('recent-songs');
-                recentSongsContainer.innerHTML = songs.slice(0, 5).map(song => {
-                    const createdDate = song.created_at ? new Date(song.created_at).toLocaleString('en-US', {
-                        month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
-                    }) : 'Just now';
-                    const imageUrl = song.image_url || '';
-
-                    return `
-                    <div class="flex items-center justify-between p-4 bg-dark-bg rounded-lg hover:bg-dark-hover transition-colors">
-                        <div class="flex items-center space-x-4">
-                            ${imageUrl ?
-                                `<img src="${imageUrl}" alt="${song.title}" class="w-12 h-12 rounded-lg object-cover" />` :
-                                `<div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                </div>`
-                            }
-                            <div>
-                                <h4 class="font-semibold text-white">${song.title || 'Untitled'}</h4>
-                                <p class="text-sm text-gray-400">${createdDate}</p>
-                            </div>
-                        </div>
-                        <button onclick="window.location.href='{{ url_for("library") }}'" class="px-4 py-2 text-purple-400 hover:text-purple-300 transition-colors">
-                            View
-                        </button>
-                    </div>
-                `}).join('');
+            while (true) {
+                const data = await apiJSON('/api/songs' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : ''));
+                for (const song of data.clips) songs.set(song.id, song);
+                if (!data.has_more) break;
+                cursor = data.next_cursor;
+                if (!cursor || cursors.has(cursor)) throw new Error('같은 페이지가 반복되어 목록 조회를 중단했습니다.');
+                cursors.add(cursor);
+            }
+            const list = [...songs.values()].sort((a,b) => (b.created_at || '').localeCompare(a.created_at || ''));
+            document.getElementById('total-songs').textContent = list.length;
+            document.getElementById('today-songs').textContent = list.filter(song => new Date(song.created_at).toDateString() === new Date().toDateString()).length;
+            document.getElementById('unlocked-songs').textContent = list.filter(song => song.is_download_unlocked === true).length;
+            document.getElementById('cached-songs').textContent = list.filter(song => song.local_audio_url).length;
+            const recent = document.getElementById('recent-songs'); recent.replaceChildren();
+            if (!list.length) recent.append(node('p', '아직 생성된 곡이 없습니다.', 'muted'));
+            for (const song of list.slice(0, 5)) {
+                const item = document.createElement('div'); item.className = 'recent-item';
+                if (song.image_url && song.image_url.startsWith('https://')) {
+                    const image = document.createElement('img'); image.src = song.image_url; image.alt = ''; image.className = 'cover'; item.append(image);
+                }
+                const info = document.createElement('div');
+                info.append(node('strong', song.title || 'Untitled'),
+                            node('div', song.created_at ? new Date(song.created_at).toLocaleString('ko-KR') : '', 'small muted'));
+                const link = node('a', 'Suno에서 열기'); link.href = song.suno_url; link.target = '_blank'; link.rel = 'noopener'; link.style.marginLeft = 'auto';
+                item.append(info, link); recent.append(item);
             }
         } catch (error) {
-            console.error('Failed to load data:', error);
+            document.getElementById('recent-songs').replaceChildren(node('p', '목록을 불러오지 못했습니다.', 'muted'));
+            showNotice(error.message, true);
         }
     }
-
-    // Load data on page load
-    loadDashboardData();
+    loadDashboard();
 </script>
 {% endblock %}

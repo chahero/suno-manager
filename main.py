@@ -1,293 +1,336 @@
-from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
 import os
-import zipfile
-import tempfile
+from pathlib import Path
+import secrets
 from datetime import datetime
 from io import BytesIO
+import json
+import zipfile
+from urllib.parse import urlparse
+
 from dotenv import load_dotenv
-from suno_api import SunoAPI
+from flask import Flask, g, jsonify, redirect, render_template, request, send_file, session, url_for
+from werkzeug.exceptions import HTTPException
 
-load_dotenv()
+from suno_api import SunoAPI, SunoAPIError, download_filename, is_mp3, validate_song_id
+from recording import PlaybackRecorder, RecordingError
 
+ROOT = Path(__file__).resolve().parent
+load_dotenv(ROOT / '.env')
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.config.update(SECRET_KEY=os.getenv('SECRET_KEY') or secrets.token_hex(32),
+                  MAX_CONTENT_LENGTH=32 * 1024, SESSION_COOKIE_HTTPONLY=True,
+                  SESSION_COOKIE_SAMESITE='Lax',
+                  DOWNLOAD_FOLDER=str(ROOT / os.getenv('DOWNLOAD_FOLDER', 'downloads')))
+# Local single-process app: browser cookies contain only a random reference.
+# Tokens entered in the UI are discarded on logout or server restart.
+app.config['SERVER_TOKENS'] = {}
+app.config['PLAYBACK_RECORDER'] = PlaybackRecorder(Path(app.config['DOWNLOAD_FOLDER']) / 'recordings')
+
 
 def get_suno_client():
-    """Get SUNO Bearer token from session and create client"""
-    token = session.get('suno_token') or os.getenv('SUNO_BEARER_TOKEN')
-    return SunoAPI(bearer_token=token)
+    if 'suno_client' not in g:
+        token = app.config['SERVER_TOKENS'].get(session.get('auth_id'))
+        if token is None and not session.get('logged_out'):
+            token = os.getenv('SUNO_BEARER_TOKEN', '')
+        g.suno_client = SunoAPI(token or '')
+    return g.suno_client
+
+
+@app.teardown_appcontext
+def close_client(_error):
+    client = g.pop('suno_client', None)
+    if client:
+        client.close()
+
+
+@app.errorhandler(SunoAPIError)
+def api_error(error):
+    return jsonify(error=str(error), code=error.code), error.status_code
+
+
+@app.errorhandler(RecordingError)
+def recording_error(error):
+    return jsonify(error=str(error), code='recording_error'), error.status_code
+
+
+@app.errorhandler(ValueError)
+def invalid_input(error):
+    return jsonify(error=str(error), code='invalid_input'), 400
+
+
+@app.errorhandler(Exception)
+def unexpected_error(error):
+    if isinstance(error, HTTPException):
+        return error
+    # Never expose exceptions that may contain tokens or signed URLs.
+    app.logger.error('Request failed: %s', type(error).__name__)
+    return jsonify(error='요청 처리에 실패했습니다. 서버 설정과 저장 경로를 확인해 주세요.'), 500
+
+
+def json_body():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        raise ValueError('JSON 객체가 필요합니다.')
+    if 'unlock' in data and not isinstance(data['unlock'], bool):
+        raise ValueError('unlock은 true 또는 false여야 합니다.')
+    return data
+
+
+def song_or_404(client, song_id):
+    song = client.get_song(validate_song_id(song_id))
+    if not song:
+        raise SunoAPIError('곡을 찾을 수 없습니다.', 404, 'not_found')
+    return song
+
+
+def song_view(song):
+    song = dict(song)
+    song_id = validate_song_id(song['id'])
+    cached = Path(app.config['DOWNLOAD_FOLDER']) / f'{song_id}.mp3'
+    song['local_audio_url'] = url_for('api_audio', song_id=song_id) if is_mp3(cached) else None
+    song['suno_url'] = f'https://suno.com/song/{song_id}'
+    return song
+
+
+def page(template):
+    if not get_suno_client().bearer_token:
+        return redirect(url_for('login'))
+    return render_template(template)
+
 
 @app.route('/')
 def index():
-    # Check authentication
-    client = get_suno_client()
-    if not client.is_authenticated():
-        return redirect(url_for('login'))
-    return render_template('dashboard.html')
+    return page('dashboard.html')
+
+
+@app.route('/library')
+def library():
+    return render_template('library.html')
+
+
+@app.route('/generate')
+def generate():
+    return page('generate.html')
+
+
+@app.route('/record')
+def record():
+    song_id = request.args.get('song_id')
+    return redirect(url_for('library', record=validate_song_id(song_id)) if song_id else url_for('library'))
+
+
+def recorder():
+    return app.config['PLAYBACK_RECORDER']
+
+
+@app.before_request
+def require_local_recording():
+    if request.path.startswith('/api/recordings') or request.endpoint in {'api_local_songs', 'api_audio'}:
+        local_hosts = {'localhost', '127.0.0.1', '::1'}
+        if urlparse(request.host_url).hostname not in local_hosts or request.remote_addr not in {'127.0.0.1', '::1'}:
+            raise RecordingError('녹음 기능은 이 컴퓨터의 localhost 앱에서만 사용할 수 있습니다.', 403)
+
+
+@app.route('/api/recordings/devices')
+def api_recording_devices():
+    return jsonify(devices=recorder().devices())
+
+
+@app.route('/api/recordings/status')
+def api_recording_status():
+    return jsonify(recorder().status())
+
+
+@app.route('/api/recordings')
+def api_recordings():
+    items = recorder().recordings()
+    song_id = request.args.get('song_id')
+    if song_id:
+        song_id = validate_song_id(song_id)
+        items = [item for item in items if item.get('song_id') == song_id]
+    return jsonify(recordings=items)
+
+
+@app.route('/api/recordings/start', methods=['POST'])
+def api_recording_start():
+    data = json_body()
+    # Stop cross-origin pages from triggering local audio capture.
+    origin = request.headers.get('Origin')
+    if origin and origin != request.host_url.rstrip('/'):
+        raise RecordingError('현재 앱 화면에서 녹음을 시작해 주세요.', 403)
+    options = {'song_id': data.get('song_id')}
+    if 'auto_playback' in data:
+        options['auto_playback'] = data['auto_playback']
+    return jsonify(recorder().start(data.get('device_id'), data.get('title', 'Recording'),
+                                   data.get('duration', 0), **options)), 202
+
+
+@app.route('/api/recordings/<job_id>/stop', methods=['POST'])
+def api_recording_stop(job_id):
+    json_body()
+    origin = request.headers.get('Origin')
+    if origin and origin != request.host_url.rstrip('/'):
+        raise RecordingError('현재 앱 화면에서 녹음을 정지해 주세요.', 403)
+    return jsonify(recorder().stop(job_id)), 202
+
+
+@app.route('/api/recordings/<job_id>/audio')
+@app.route('/api/recordings/<job_id>/download')
+def api_recording_file(job_id):
+    path, info = recorder().file(job_id)
+    return send_file(path, mimetype='audio/wav', conditional=True,
+                     as_attachment=request.path.endswith('/download'), download_name=info['filename'])
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        data = request.get_json() if request.is_json else request.form
-        token = data.get('token')
-
-        if token:
-            # Validate token
-            client = SunoAPI(bearer_token=token)
-            if client.is_authenticated():
-                session['suno_token'] = token
-                if request.is_json:
-                    return jsonify({'status': 'success'})
-                return redirect(url_for('index'))
-            else:
-                if request.is_json:
-                    return jsonify({'error': 'Invalid token'}), 401
-                return render_template('login.html', error='Invalid token')
-
+        data = json_body() if request.is_json else request.form
+        token = data.get('token', '')
+        if not isinstance(token, str) or not token.strip():
+            raise ValueError('Suno 토큰을 입력해 주세요.')
+        client = SunoAPI(token)
+        try:
+            if not client.is_authenticated():
+                raise SunoAPIError('토큰이 만료되었거나 유효하지 않습니다.', 401, 'unauthorized')
+            app.config['SERVER_TOKENS'].pop(session.get('auth_id'), None)
+            session.clear()
+            auth_id = secrets.token_urlsafe(32)
+            app.config['SERVER_TOKENS'][auth_id] = client.bearer_token
+            session['auth_id'] = auth_id
+        finally:
+            client.close()
+        return jsonify(status='success') if request.is_json else redirect(url_for('index'))
     return render_template('login.html')
+
 
 @app.route('/logout')
 def logout():
-    session.pop('suno_token', None)
+    app.config['SERVER_TOKENS'].pop(session.get('auth_id'), None)
+    session.clear()
+    session['logged_out'] = True
     return redirect(url_for('login'))
 
-@app.route('/generate')
-def generate():
-    client = get_suno_client()
-    if not client.is_authenticated():
-        return redirect(url_for('login'))
-    return render_template('generate.html')
-
-@app.route('/library')
-def library():
-    client = get_suno_client()
-    if not client.is_authenticated():
-        return redirect(url_for('login'))
-    return render_template('library.html')
 
 @app.route('/api/auth/check')
 def api_auth_check():
-    """Check authentication status"""
-    client = get_suno_client()
-    is_auth = client.is_authenticated()
-    return jsonify({'authenticated': is_auth})
+    authenticated = get_suno_client().is_authenticated()
+    return jsonify(authenticated=authenticated), 200 if authenticated else 401
+
 
 @app.route('/api/billing/info')
 def api_billing_info():
-    """Get credits and subscription info"""
-    try:
-        client = get_suno_client()
-        if not client.is_authenticated():
-            return jsonify({'error': 'Not authenticated'}), 401
+    data = get_suno_client().get_billing_info()
+    usage = data.get('download_usage') or {}
+    limit = usage.get('current_period_downloads_limit')
+    used = usage.get('current_period_downloads_used')
+    extra = usage.get('additional_download_remaining')
+    remaining = max(0, limit - used) + extra if all(isinstance(x, int) for x in (limit, used, extra)) else None
+    return jsonify(credits=data.get('total_credits_left'), monthly_limit=data.get('monthly_limit'),
+                   plan_name=(data.get('plan') or {}).get('name', 'Unknown'),
+                   downloads_remaining=remaining, download_usage=usage)
 
-        billing_info = client.get_billing_info()
 
-        # Extract required information only
-        return jsonify({
-            'credits': billing_info.get('total_credits_left', 0),
-            'monthly_limit': billing_info.get('monthly_limit', 0),
-            'monthly_usage': billing_info.get('monthly_usage', 0),
-            'plan_name': billing_info.get('plan', {}).get('name', 'Unknown'),
-            'renews_on': billing_info.get('renews_on', '')
-        })
+@app.route('/api/songs')
+def api_songs():
+    data = get_suno_client().get_songs(request.args.get('cursor'))
+    return jsonify(status='success', clips=[song_view(song) for song in data['clips']],
+                   has_more=bool(data.get('has_more')), next_cursor=data.get('next_cursor'))
 
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/songs/local')
+def api_local_songs():
+    # Keep recorded/cached songs usable when the short-lived Suno token expires.
+    items = {}
+    for recording in recorder().recordings():
+        try:
+            song_id = validate_song_id(recording.get('song_id'))
+        except ValueError:
+            continue
+        if song_id not in items:
+            items[song_id] = {'id': song_id, 'title': recording.get('title') or '보관한 곡',
+                              'created_at': recording.get('created_at', ''),
+                              'metadata': {'tags': '로컬 녹음 보관곡'}, 'offline': True}
+    for path in Path(app.config['DOWNLOAD_FOLDER']).glob('*.mp3'):
+        try:
+            song_id = validate_song_id(path.stem)
+        except ValueError:
+            continue
+        if is_mp3(path) and song_id not in items:
+            items[song_id] = {'id': song_id, 'title': '보관한 곡 ' + song_id[:8],
+                              'created_at': '', 'metadata': {'tags': '로컬 MP3 보관곡'}, 'offline': True}
+    return jsonify(clips=[song_view(song) for song in items.values()], has_more=False)
+
+
+@app.route('/api/songs/<song_id>')
+def api_get_song(song_id):
+    return jsonify(status='success', song=song_view(song_or_404(get_suno_client(), song_id)))
+
 
 @app.route('/api/generate', methods=['POST'])
-def api_generate():
-    """Music generation API endpoint"""
-    try:
-        client = get_suno_client()
-        if not client.is_authenticated():
-            return jsonify({'error': 'Not authenticated'}), 401
-
-        data = request.json
-
-        # Check required parameters
-        if not data.get('prompt'):
-            return jsonify({'error': 'Prompt is required'}), 400
-
-        # Generate tags (genre + mood)
-        tags_parts = []
-        if data.get('genre'):
-            tags_parts.append(data['genre'])
-        if data.get('mood'):
-            tags_parts.append(data['mood'])
-        tags = ', '.join(tags_parts) if tags_parts else ''
-
-        # Request music generation via SUNO API
-        result = client.generate_music(
-            prompt=data['prompt'],
-            tags=tags,
-            instrumental=data.get('instrumental', False)
-        )
-
-        if 'error' in result:
-            return jsonify({'error': result['error']}), 500
-
-        return jsonify({
-            'status': 'success',
-            'message': 'Music generation started',
-            'data': result
-        })
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/songs', methods=['GET'])
-def api_songs():
-    """Get generated songs list API"""
-    try:
-        client = get_suno_client()
-        if not client.is_authenticated():
-            return jsonify({'error': 'Not authenticated'}), 401
-
-        cursor = request.args.get('cursor', None)
-
-        result = client.get_songs(cursor=cursor)
-
-        # Return response structure
-        return jsonify({
-            'status': 'success',
-            'clips': result.get('clips', []),
-            'next_cursor': result.get('next_cursor'),
-            'has_more': result.get('has_more', False)
-        })
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/songs/<song_id>', methods=['GET'])
-def api_get_song(song_id):
-    """Get specific song info API"""
-    try:
-        client = get_suno_client()
-        if not client.is_authenticated():
-            return jsonify({'error': 'Not authenticated'}), 401
-
-        song = client.get_song(song_id)
-
-        if not song:
-            return jsonify({'error': 'Song not found'}), 404
-
-        return jsonify({
-            'status': 'success',
-            'song': song
-        })
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/api/songs/<song_id>', methods=['DELETE'])
-def api_delete_song(song_id):
-    """Delete song API"""
-    try:
-        client = get_suno_client()
-        if not client.is_authenticated():
-            return jsonify({'error': 'Not authenticated'}), 401
+def unsupported_operation(song_id=None):
+    return jsonify(error='생성·삭제 기능은 현재 지원하지 않습니다. Suno 웹사이트에서 이용해 주세요.',
+                   code='unsupported_operation'), 501
 
-        success = client.delete_song(song_id)
 
-        if not success:
-            return jsonify({'error': 'Failed to delete song'}), 500
-
-        return jsonify({
-            'status': 'success',
-            'message': 'Song deleted successfully'
-        })
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/songs/<song_id>/download', methods=['GET'])
+@app.route('/api/songs/<song_id>/download', methods=['GET', 'POST'])
 def api_download_song(song_id):
-    """Download song API"""
-    try:
-        client = get_suno_client()
-        if not client.is_authenticated():
-            return jsonify({'error': 'Not authenticated'}), 401
+    data = json_body() if request.method == 'POST' else {}
+    client = get_suno_client()
+    song = song_or_404(client, song_id)
+    path = Path(app.config['DOWNLOAD_FOLDER']) / f"{song['id']}.mp3"
+    client.download_song(song['id'], str(path), unlock=data.get('unlock', False))
+    return send_file(path, as_attachment=True, download_name=download_filename(song), mimetype='audio/mpeg')
 
-        # Get download folder path from environment variable (default: downloads)
-        output_dir = os.getenv('DOWNLOAD_FOLDER', 'downloads')
-        os.makedirs(output_dir, exist_ok=True)
 
-        output_path = os.path.join(output_dir, f'{song_id}.mp3')
+@app.route('/api/songs/<song_id>/audio')
+def api_audio(song_id):
+    path = Path(app.config['DOWNLOAD_FOLDER']) / f'{validate_song_id(song_id)}.mp3'
+    if not is_mp3(path):
+        raise SunoAPIError('먼저 MP3를 다운로드해 주세요. 다운로드 승인 없이 재생하려면 Suno에서 열어 주세요.', 404, 'audio_not_cached')
+    return send_file(path, mimetype='audio/mpeg', conditional=True)
 
-        success = client.download_song(song_id, output_path)
-
-        if not success:
-            return jsonify({'error': 'Failed to download song'}), 500
-
-        return send_file(output_path, as_attachment=True)
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/songs/batch-download', methods=['POST'])
 def api_batch_download():
-    """Batch download multiple songs as ZIP file API"""
-    try:
-        client = get_suno_client()
-        if not client.is_authenticated():
-            return jsonify({'error': 'Not authenticated'}), 401
+    data = json_body()
+    song_ids = data.get('song_ids')
+    if not isinstance(song_ids, list) or not 1 <= len(song_ids) <= 50:
+        raise ValueError('한 번에 1~50곡을 선택해 주세요.')
+    song_ids = list(dict.fromkeys(validate_song_id(song_id) for song_id in song_ids))
+    client, downloaded, failed = get_suno_client(), [], []
+    memory_zip = BytesIO()
+    with zipfile.ZipFile(memory_zip, 'w', zipfile.ZIP_STORED) as archive:
+        for song_id in song_ids:
+            try:
+                song = song_or_404(client, song_id)
+                path = Path(app.config['DOWNLOAD_FOLDER']) / f'{song_id}.mp3'
+                client.download_song(song_id, str(path), unlock=data.get('unlock', False))
+                filename = download_filename(song)
+                archive.write(path, filename)
+                downloaded.append({'id': song_id, 'file': filename})
+            except SunoAPIError as error:
+                if error.status_code == 401:
+                    raise
+                failed.append({'id': song_id, 'code': error.code, 'error': str(error)})
+                if error.code == 'authorization_uncertain':
+                    # Stop further quota-consuming operations after an ambiguous approval.
+                    for skipped in song_ids[song_ids.index(song_id) + 1:]:
+                        failed.append({'id': skipped, 'code': 'not_attempted', 'error': '이전 승인 결과가 불명확하여 중단했습니다.'})
+                    break
+        if not downloaded:
+            return jsonify(error='다운로드된 곡이 없습니다.', failed=failed), 409
+        archive.writestr('download-results.json', json.dumps({'downloaded': downloaded, 'failed': failed}, ensure_ascii=False, indent=2))
+    memory_zip.seek(0)
+    response = send_file(memory_zip, mimetype='application/zip', as_attachment=True,
+                         download_name=f'suno-songs-{datetime.now():%Y-%m-%d}.zip')
+    response.headers['X-Downloaded-Count'] = str(len(downloaded))
+    response.headers['X-Failed-Count'] = str(len(failed))
+    return response
 
-        data = request.json
-        song_ids = data.get('song_ids', [])
-
-        if not song_ids:
-            return jsonify({'error': 'No songs selected'}), 400
-
-        # Create ZIP file in memory
-        memory_zip = BytesIO()
-
-        # Fetch all songs once to avoid repeated API calls
-        all_songs = client.get_all_songs()
-        songs_dict = {song.get('id'): song for song in all_songs}
-
-        # Create temporary directory
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Download each song
-            downloaded_files = []
-            for song_id in song_ids:
-                song = songs_dict.get(song_id)
-                if not song:
-                    continue
-
-                # Generate filename (title + ID)
-                title = song.get('title', 'Untitled').replace('/', '-').replace('\\', '-')
-                filename = f"{title}_{song_id}.mp3"
-                filepath = os.path.join(temp_dir, filename)
-
-                # Download (pass song info to avoid redundant API calls)
-                if client.download_song(song_id, filepath, song_info=song):
-                    downloaded_files.append((filepath, filename))
-
-            if not downloaded_files:
-                return jsonify({'error': 'Failed to download any songs'}), 500
-
-            # Create ZIP file (in memory)
-            with zipfile.ZipFile(memory_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for filepath, filename in downloaded_files:
-                    zipf.write(filepath, filename)
-
-        # Prepare ZIP file for sending
-        memory_zip.seek(0)
-        date_str = datetime.now().strftime('%Y-%m-%d')
-        zip_filename = f'suno-songs-{date_str}.zip'
-
-        return send_file(
-            memory_zip,
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name=zip_filename
-        )
-
-    except Exception as e:
-        print(f"Batch download error: {e}")
-        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
-    debug = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
-    app.run(debug=debug, host='0.0.0.0', port=port)
+    # This app holds a personal token; keep it local by default.
+    app.run(host=os.getenv('HOST', '127.0.0.1'), port=int(os.getenv('PORT', '5000')),
+            debug=os.getenv('DEBUG', 'false').lower() in ('true', '1', 'yes'))

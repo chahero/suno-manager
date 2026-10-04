@@ -1,0 +1,49 @@
+<style>
+    #song-recording-dialog{max-width:900px;padding:24px}
+    .song-recording-settings{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0}
+    .song-recording-settings label{display:grid;gap:6px;flex:1;min-width:200px}
+    .song-recording-settings label:last-child{flex:0 1 200px;min-width:140px}
+    .song-recording-settings select,.song-recording-settings input{width:100%;min-width:0}
+    #song-recording-dialog audio{width:100%;margin:12px 0}
+    #song-remote-playback{padding:20px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
+    .song-recording-meter{height:9px;background:var(--bg);border-radius:6px;margin:12px 0;overflow:hidden}
+    #song-recording-level{display:block;height:100%;background:#34d399;transition:width .2s}
+    #song-recording-clock{font-size:24px;font-variant-numeric:tabular-nums}
+    #song-recording-message{white-space:pre-wrap}
+    .song-recording-result{padding-top:16px;margin-top:16px;border-top:1px solid var(--border)}
+    @media(max-width:480px){ #song-recording-dialog{padding:16px}.song-recording-settings label{min-width:0;width:100%;flex:auto}}
+</style>
+<dialog id="song-recording-dialog" aria-labelledby="song-recording-title">
+    <div class="toolbar">
+        <h2 id="song-recording-title">곡 재생·녹음</h2><span class="spacer"></span>
+        <button id="close-song-recording" type="button">닫기</button>
+    </div>
+    <p id="song-recording-subtitle" class="muted small"></p>
+    <audio id="song-recording-player" controls preload="metadata" hidden></audio>
+    <div id="song-remote-playback" hidden>♫ Suno 자동 재생 · Windows 기본 출력 장치 사용</div>
+    <p id="song-playback-help" class="small muted"></p>
+    <p id="song-playback-progress" class="small" aria-live="off"></p>
+    <details><summary>녹음 설정</summary>
+    <div class="song-recording-settings">
+        <label>재생 소리가 나오는 출력 장치
+            <select id="song-recording-device" disabled><option>장치를 확인하는 중…</option></select>
+        </label>
+        <label>최대 녹음 시간 (초)
+            <input id="song-recording-duration" type="number" min="0" max="3600" step="1" value="0">
+        </label>
+    </div>
+    <p class="small muted">0이면 곡이 끝날 때 자동 저장합니다. 최대 1시간이며, 같은 출력 장치의 다른 소리도 함께 녹음됩니다. Suno 자동 재생에는 기본 출력 장치를 사용합니다.</p>
+    </details>
+    <div class="toolbar">
+        <button id="start-song-recording" class="primary" type="button" disabled>재생·녹음 시작</button>
+        <button id="stop-song-recording" type="button" disabled>정지하고 저장</button>
+        <span class="spacer"></span><span id="song-recording-state" class="pill">대기 중</span>
+        <span id="song-recording-clock">00:00</span>
+    </div>
+    <div class="song-recording-meter" role="meter" aria-label="녹음 오디오 크기" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <span id="song-recording-level" style="width:0%"></span>
+    </div>
+    <p id="song-recording-message" class="small" role="status"></p>
+    <h3>이 곡의 녹음</h3>
+    <div id="song-recording-results"><p class="small muted">아직 이 곡의 녹음이 없습니다.</p></div>
+</dialog>
