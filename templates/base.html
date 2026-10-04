@@ -32,7 +32,6 @@
         <nav aria-label="메인 메뉴">
             <a href="/" class="{{ 'active' if request.endpoint == 'index' else '' }}">대시보드</a>
             <a href="/library" class="{{ 'active' if request.endpoint == 'library' else '' }}">음악 라이브러리</a>
-            <a href="/generate" class="{{ 'active' if request.endpoint == 'generate' else '' }}">음악 생성 안내</a>
             <a href="/logout">로그아웃</a>
         </nav>
         <div class="quota">

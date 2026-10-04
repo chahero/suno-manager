@@ -194,12 +194,6 @@ class WebTests(unittest.TestCase):
         self.assertEqual(fake.download_song.call_count, 1)
         self.assertEqual(result.json['failed'][1]['code'], 'not_attempted')
 
-    def test_retired_endpoints_do_not_call_suno(self):
-        with patch('main.get_suno_client') as client:
-            self.assertEqual(self.web.post('/api/generate', json={'prompt': 'test'}).status_code, 501)
-            self.assertEqual(self.web.delete('/api/songs/' + ID).status_code, 501)
-            client.assert_not_called()
-
     def test_api_failure_preserves_error_status(self):
         fake = MagicMock()
         fake.get_songs.side_effect = SunoAPIError('만료된 토큰', 401, 'unauthorized')

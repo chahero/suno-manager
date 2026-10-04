@@ -15,12 +15,10 @@ Suno의 개인 라이브러리를 조회하고 MP3를 저장하며, Windows 재�
 | 브라우저 없이 명령줄 다운로드 | 지원 |
 | 저장된 MP3 재생 | 지원 |
 | 다운로드 전 곡 재생 | 곡별 Suno 임베드 플레이어 |
-| 음악 생성·곡 삭제 | 이전 구현 중단, Suno에서 이용 |
 | Windows 출력 오디오 녹음, WAV 재생·저장 | 라이브러리의 곡별 재생·녹음 팝업 |
 | Suno 원본 WAV·M4A·영상 내보내기 | 이 프로젝트에서 미지원 |
 
 새 다운로드 승인 요청은 구현했으며 모의 테스트로 확인했습니다. 실제 계정 검증은 **이미 잠금 해제된 곡만** 사용했습니다.
-생성·삭제는 기존 요청을 제거하고 API에서 501을 반환합니다. 라이브러리의 실제 곡은 삭제하지 않습니다.
 
 ## 설치와 실행
 
@@ -152,7 +150,6 @@ ZIP에는 성공 파일과 `download-results.json`을 넣어 누락된 곡과 �
 | `POST /api/recordings/{id}/stop` · `{}` | 녹음 정지·WAV 저장 |
 | `GET /api/recordings?song_id=UUID` | 해당 곡의 저장된 녹음 목록; 생략하면 전체 |
 | `GET /api/recordings/{id}/audio` · `/download` | WAV 재생·다운로드, Range 요청 지원 |
-| `POST /api/generate`, `DELETE /api/songs/{id}` | 501, 중단한 기능 |
 
 녹음 API는 localhost 접속만 허용하며 Suno 인증과 독립적으로 동작합니다.
 
@@ -162,7 +159,7 @@ ZIP에는 성공 파일과 `download-results.json`을 넣어 누락된 곡과 �
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-테스트는 실제 계정에 생성·삭제·새 다운로드 승인을 요청하지 않습니다.
+테스트는 Suno 요청을 모의 처리하며 실제 계정의 새 다운로드 승인을 요청하지 않습니다.
 인증 오류, 페이지 반복, 명시적 승인, 승인 재시도 방지, 잘못된 파일 처리,
 ZIP 부분 실패와 토큰 보관·로그아웃을 검증합니다.
 녹음 테스트는 출력 장치 필터링, PCM 데이터와 WAV 파일 일치, 중복 시작 차단,

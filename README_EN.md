@@ -16,8 +16,7 @@ no additional song was unlocked during validation.
 - Live account credits and remaining download allowance.
 - Per-song Windows playback recording, WAV playback and download in the library.
 
-The old generation and deletion implementations have been retired. Their API routes return 501,
-and the UI links to Suno for those operations. Suno source WAV/M4A/video export is not implemented.
+Suno source WAV/M4A/video export is not implemented.
 
 ## Setup
 
@@ -127,7 +126,6 @@ The recorder is provided for technical verification of local playback capture.
 - `POST /api/recordings/{id}/stop` with `{}`.
 - `GET /api/recordings?song_id=UUID`: saved sessions for one song; omit the filter to list all.
 - `GET /api/recordings/{id}/audio` or `/download`: WAV playback/download with range support.
-- `POST /api/generate` and `DELETE /api/songs/{id}`: 501.
 
 Recording APIs accept only localhost requests and do not require Suno authentication.
 
@@ -137,7 +135,7 @@ Recording APIs accept only localhost requests and do not require Suno authentica
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-Tests mock Suno requests and do not generate, delete or unlock real songs.
+Tests mock Suno requests and do not unlock real songs.
 They cover authentication, pagination, explicit authorization, uncertain approval handling,
 invalid audio, partial ZIP results and server-side token storage/logout.
 Recording tests cover loopback filtering, exact PCM/WAV data, duplicate starts, automatic stop,

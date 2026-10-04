@@ -108,11 +108,6 @@ def library():
     return render_template('library.html')
 
 
-@app.route('/generate')
-def generate():
-    return page('generate.html')
-
-
 @app.route('/record')
 def record():
     song_id = request.args.get('song_id')
@@ -265,13 +260,6 @@ def api_local_songs():
 @app.route('/api/songs/<song_id>')
 def api_get_song(song_id):
     return jsonify(status='success', song=song_view(song_or_404(get_suno_client(), song_id)))
-
-
-@app.route('/api/generate', methods=['POST'])
-@app.route('/api/songs/<song_id>', methods=['DELETE'])
-def unsupported_operation(song_id=None):
-    return jsonify(error='생성·삭제 기능은 현재 지원하지 않습니다. Suno 웹사이트에서 이용해 주세요.',
-                   code='unsupported_operation'), 501
 
 
 @app.route('/api/songs/<song_id>/download', methods=['GET', 'POST'])
