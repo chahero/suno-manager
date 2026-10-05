@@ -1,8 +1,17 @@
-# SUNO Manager
+# SUNO Manager (Unofficial)
 
 English | [한국어](README.md)
 
-A local Flask app for viewing your Suno library, saving authorized MP3 files and recording Windows playback as WAV.
+An **unofficial local Flask app** for viewing your Suno library, saving authorized MP3 files and recording Windows playback as WAV.
+It uses Suno's internal web API and embedded player. It is not an official Suno product or API SDK.
+
+> **Unofficial playback recording**
+>
+> Automatic playback recording is an **unofficial method, not a storage workflow officially supported or recommended by Suno.**
+> As checked on 2026-10-05, the “Permitted Commercial Use” section of [Suno's terms](https://suno.com/terms)
+> prohibits obtaining copies outside Suno-provided download channels and **explicitly prohibits recording and stream ripping**.
+> Technical validation does not imply permission from Suno. Use Suno-provided download channels to save music.
+
 On 2026-10-04, a real account verified listing, direct MP3 download for an already unlocked song,
 ZIP download, and playback from the local cache. New authorization is implemented and mock-tested;
 no additional song was unlocked during validation.
@@ -14,13 +23,27 @@ no additional song was unlocked during validation.
 - A CLI that works without opening a browser or starting the Flask server.
 - Playback of downloaded MP3 files; other tracks use Suno's official embedded player.
 - Live account credits and remaining download allowance.
-- Per-song Windows playback recording, WAV playback and download in the library.
+- Unofficial per-song automatic Windows playback recording, WAV playback and download in the library.
 
 Suno source WAV/M4A/video export is not implemented.
 
+## Screenshots
+
+Captured from the current code on 2026-10-05. These show the local library fallback after the Suno token expired,
+with recordings saved during validation on 2026-10-04. No tokens or authorization headers appear in the images.
+
+**Library — per-song playback recording and saved results**
+
+![Library with per-song playback recording and saved-recording buttons](docs/images/library.jpg)
+
+**Song dialog — playback and download of a WAV automatically saved at the song ending**
+
+![Saved WAV marked with automatic song-ending detection and a download button](docs/images/song-recordings.jpg)
+
 ## Setup
 
-Requires Python 3.10+.
+Requires Python 3.10+. The validated environment is Windows with Python 3.11.
+**Playback recording is Windows-only** and requires Microsoft Edge and an available speaker/headphone output device.
 
 ```powershell
 python -m venv .venv
@@ -28,20 +51,24 @@ python -m venv .venv
 Copy-Item .env.example .env
 ```
 
-Set `SUNO_BEARER_TOKEN` in `.env` (with or without the Bearer prefix).
+Enter a token on the web login page or set `SUNO_BEARER_TOKEN` in `.env` (with or without the Bearer prefix).
+The CLI uses the token from `.env`.
 In your logged-in Suno browser, open Developer Tools → Network → reload → `feed/v3` →
 Headers → Request Headers → `authorization`.
 
 Use a random `SECRET_KEY`, `DEBUG=False`, and `HOST=127.0.0.1`.
 Run `.\.venv\Scripts\python.exe main.py` or `start.bat`, then open
 [the local app](http://127.0.0.1:5000). `start.bat` prefers the project virtual environment.
+If you change `PORT`, use the same port in the app URL.
 
 Expired tokens return an explicit 401. Refresh the token through the login page, or edit `.env`
 and restart the server. UI tokens are stored in server memory, not the browser session cookie,
 and are removed on logout or server restart. Logging out prevents that browser from falling back
 to the environment token.
 
-## Play and record each song
+## Unofficial automatic playback recording
+
+This feature is for technical verification of Windows output capture. Read the **Unofficial playback recording** notice above first.
 
 Open [the library](http://127.0.0.1:5000/library) and click **재생·녹음** on a song.
 Its dialog includes playback, recording controls and WAV recordings belonging to that song.
@@ -53,7 +80,14 @@ It captures Windows speaker/headphone output through WASAPI loopback, rather tha
 3. The actual song ending stops playback and recording and automatically saves a WAV.
 4. Play or download the result under **이 곡의 녹음**. **녹음 N개 보기** opens existing results without starting a new session.
 
-Cached MP3s play in the current browser. Other songs use Suno's official player in an isolated temporary Edge session, without a separate visible window or access to the user's browser profile. Online automatic playback records the Windows default output device. The full song must be playable in Suno's embed. Playback that makes no progress for 30 seconds fails and cleans up its session.
+| Save method | Result | Suno download allowance |
+| --- | --- | --- |
+| MP3 download | An MP3 file prepared by Suno | Used when a new download is authorized |
+| Unofficial playback recording | A WAV captured from Windows output | No download or authorization API call |
+
+Cached MP3s play in the current browser. Other songs use Suno's official player in an isolated temporary Edge session.
+**The player is provided by Suno; its automatic controls and recording are this project's unofficial implementation.**
+The session has no separate visible window or access to the user's browser profile. Online automatic playback records the Windows default output device. The full song must be playable in Suno's embed. Playback that makes no progress for 30 seconds fails and cleans up its session.
 
 A duration of 0 means stop at the song ending; 1–3600 also sets a capture time limit.
 All sessions stop after at most one hour. Closing the dialog or pressing Esc stops and saves recording.
@@ -107,9 +141,6 @@ Ambiguous authorization responses are not automatically retried. Check unlock st
 An approval may have consumed an allowance even if file preparation or transfer later fails.
 ZIPs contain `download-results.json` with successful and failed song IDs. Sanitized attachment/ZIP names
 avoid Windows filename errors, while cache files use UUID names.
-
-The recorder is provided for technical verification of local playback capture.
-[Suno's terms](https://suno.com/terms) restrict obtaining copies outside Suno-provided download channels and explicitly name recording and stream ripping.
 
 ## Local API
 
